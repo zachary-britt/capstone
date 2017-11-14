@@ -40,7 +40,6 @@ def get_id(document):
 
 def iter_through_table(table):
     gen = doc_generator(table)
-    #ipdb.set_trace()
     for doc in gen:
         date=get_date(doc)
         _id =get_id(doc)

@@ -18,11 +18,15 @@ def open_database_collection():
     table = db['articles']
     return table
 
-class NYTScraper:
+def nyt_parser(link):
+    html = requests.get(link).content
+    soup = BeautifulSoup(html, 'html.parser')
+    article_content = '\n'.join([i.text for i in soup.select('p.story-body-text')])
+    return article_content
 
+class NYTScraper:
     def __init__(self, table):
         self.table = table
-
         NYT_API_KEY = os.environ['NYT_API_KEY']
         self.link = 'http://api.nytimes.com/svc/search/v2/articlesearch.json'
         self.payload = {'api-key': NYT_API_KEY}
