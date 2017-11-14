@@ -19,4 +19,17 @@ My plan is to organize the text around key figures, groups and concepts. E.g. ['
 
 When these entities are mentioned in the text, they can be associated with sentiment in their context. By comparint the sentiment in one article to another article on a similar topic, we can find a sentimental variance. Thus we can try to find and article with no sentiment and articles with extreme sentiment.
 
-By cross referencing with other forms of bias indication, we can associate each article with a conservative or liberal bias.
+By cross referencing with other forms of bias indication, we can associate each article with a conservative or liberal bias. 
+
+Data:
+
+News articles: NYT, WSJ.
+
+Political ad transcripts.
+
+
+
+MVP: Model which can assign similary scores between news articles and political advertisements.
+
+Bonus: Web app which can accept text and return a political metric.
+
