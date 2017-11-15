@@ -34,28 +34,33 @@ MVP: Model which can assign similary scores between news articles and political 
 Bonus: Web app which can accept text and return a political metric.
 
 
-
+<br>
 
 IN PROGRESS THOUGHTS:
-
+<br>
 So we have:
-  Republican ads.
-  Democratic ads.
+  -Republican ads.
+  
+  -Democratic ads.
 
-  Republican leaning political news articles
-  Democratic leaning political news articles
-
+  -Republican leaning political news articles
+  
+  -Democratic leaning political news articles
+<br>
   
   The simplest thing might be to train on the ad data, building a network that distinguishes between republican and democratic ads, and then use the news articles purely as a test. If the ads themselves can sort the articles, that would be great. 
   
   My concern is that the domain shift between transcripts of spoken advertising and written news articles will be too great. Thus it would help to also train on the news articles. However that creates a plethora of other issues. Once we're training on news articles we have to either be pre-assigning labels to the articles, or be performing some sort of unsupervised learning. If we just ask the network to classify an article as "FOX" or "HP" and then assign a loss based on missed classifications, we could just be learning the writing style of FOX and HP. There's also a leakage nightmare, as articles have clues like, "woman house told FOX news," in their text.
   This also weakens the value of the model, because it's looking for similarity to FOX/HP rather than similarity to actual propoganda. I can live with it, but it's less interesting.
   
+<br>
 	
   A possible solution is to cut articles into sentences and remove sentences with compromising information (Author names, Journal names). We could further limit the data to just sentences with identified Republican/Democratic entities. 
-	
+
+<br>
 	
   The original idea of how to make this work was to not directly ask for party identification, but to rather use advertisement as entity sentiment labels. They revolve around entities they support/attack and have intense negative/positive sentiment. By training for entity sentiment, you can then look for entity sentiment in news articles, perhaps a few sentences before to a few sentences after a tagged entity is mentioned. We then collect all of the tagged entities mentioned and produce a vector of entity-sentiment pairs for the article. 
+  
   We can then concatenate each document vector into a big ol matrix and run SVD. Ideally the first component will be the left/right partisan divide.
 	
 	
