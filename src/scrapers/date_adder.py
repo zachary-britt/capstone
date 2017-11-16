@@ -1,3 +1,10 @@
+'''
+DEPRECATED
+'''
+
+
+
+
 import ipdb
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError, CollectionInvalid

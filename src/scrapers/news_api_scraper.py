@@ -1,3 +1,9 @@
+'''
+DEPRECATED
+'''
+
+
+
 import requests, json, os, ipdb, sys
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError, CollectionInvalid
