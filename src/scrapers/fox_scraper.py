@@ -5,6 +5,8 @@ from selenium import webdriver
 from datetime import datetime
 import time
 
+import threading, multiprocessing
+
 def fox_search_link_builder(key_word, min_date, max_date, start=0):
     fox_search_list = ['http://www.foxnews.com/search-results/search?q=',
                         key_word,
@@ -59,6 +61,21 @@ def meta_scraper(table, key_word, min_date, max_date):
         time.sleep(1)
         #end while
 
+
+def get_content(link):
+    try:
+        soup = souper(link, on_browser=False)
+        art_body = soup.find('div', {'class':'article-body'})
+        ps = art_body.find_all('p')
+        text_lines=[]
+        for p in ps:
+            text_lines.append(p.get_text())
+        content = '\n'.join(text_lines)
+        table.update_one(filter={'_id':_id}, update={'$set':{'content':content}})
+        print(i, content[:70])
+    except:
+        continue
+
 def content_adder(table):
     import numpy as np
     gen = table_grabber(table)
@@ -67,18 +84,7 @@ def content_adder(table):
         if not 'content' in doc.keys():
             link = doc['link']
             _id = doc['_id']
-            try:
-                soup = souper(link, on_browser=False)
-                art_body = soup.find('div', {'class':'article-body'})
-                ps = art_body.find_all('p')
-                text_lines=[]
-                for p in ps:
-                    text_lines.append(p.get_text())
-                content = '\n'.join(text_lines)
-                table.update_one(filter={'_id':_id}, update={'$set':{'content':content}})
-                print(i, content[:70])
-            except:
-                continue
+
             time.sleep(np.random.random())
 
 

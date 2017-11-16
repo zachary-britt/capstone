@@ -7,6 +7,11 @@ import time
 from selenium import webdriver
 import codecs
 
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import TimeoutException
+
 def open_mongo_client():
     username = urllib.parse.quote_plus('admin')
     password = urllib.parse.quote_plus('admin123')
@@ -27,7 +32,7 @@ def soup_browser(browser):
     return soup
 
 
-def souper(url, on_browser=True, saved=False):
+def souper(url, on_browser=True, saved=False, x_ind = None):
     '''
     convert the stuff at path into Beautiful HTML Soup
 
@@ -37,20 +42,33 @@ def souper(url, on_browser=True, saved=False):
         bool:   saved       saved html on local filesystem, (interpret the url as
                             a path)
     OUTPUT:
-        Beautiful HTML Soup
+        Beautiful HTML Soup, or None if Error
     '''
 
     if saved:
         f = codecs.open(url, 'r')
         html = f.read()
     elif on_browser:
-        browser = webdriver.PhantomJS()
-        browser.get(url)
-        html = browser.page_source
+        try:
+            browser = webdriver.PhantomJS()
+
+            if x_ind:
+                browser.get(url)
+                delay = 1 # seconds
+                try:
+                    myElem = WebDriverWait(browser, delay).until(EC.presence_of_element_located((By.XPATH, x_ind)))
+                except TimeoutException:
+                    print ("Loading Timeout")
+
+            html = browser.page_source
+        except:
+            print("Failed to load with browser")
+            return None
     else:
         try:
             html = requests.get(url).text
         except:
+            print("Failed to load with requests")
             return None
     soup = BeautifulSoup(html, 'html.parser')
     return soup
