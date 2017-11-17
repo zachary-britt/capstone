@@ -6,7 +6,13 @@ import pandas as pd
 # import formatter
 import pickle
 
-def loader():
+def load():
+    import sys
+    sys.path.insert(0, '/home/zack/dsi/capstone/src/scrapers')
+    import scrape_tools as st
+    from database_cleaning import table_to_list
+    import pandas as pd
+    import pickle
 
     fox_table = st.open_database_collection('articles_fox')
     fox = table_to_list(fox_table)
@@ -32,6 +38,12 @@ def loader():
     return fox, hp, nyt, ads
 
 
+
+def load_toy():
+    import pickle
+    with open('../data/toy_data.pkl','rb') as f:
+        data_tup = pickle.load(f)
+    return data_tup
 
 def loader_formatter():
 
