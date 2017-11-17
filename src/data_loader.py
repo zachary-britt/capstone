@@ -1,11 +1,11 @@
-import sys
-sys.path.insert(0, '/home/zachary/dsi/capstone/src/scrapers')
-import scrape_tools as st
-from database_cleaning import table_to_list
-import pandas as pd
-import formatter
 
-def loader():
+def load():
+    import sys
+    sys.path.insert(0, '/home/zack/dsi/capstone/src/scrapers')
+    import scrape_tools as st
+    from database_cleaning import table_to_list
+    import pandas as pd
+    import pickle
 
     fox_table = st.open_database_collection('articles_fox')
     fox = table_to_list(fox_table)
@@ -24,11 +24,17 @@ def loader():
     ads = table_to_list(ad_table)
     mini_ads = ads[:100]
 
-    return fox, hp, nyt, ads
+    return ads, fox, hp, nyt
 
     # data_list = [mini_ads, mini_fox, mini_hp, mini_nyt]
     # with open('toy_data.pkl', 'wb') as f:
     #     pickle.dump(data_list, f)
+
+def load_toy():
+    import pickle
+    with open('../data/toy_data.pkl','rb') as f:
+        data_tup = pickle.load(f)
+    return data_tup
 
 def loader_formatter():
 
