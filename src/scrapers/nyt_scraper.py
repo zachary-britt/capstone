@@ -74,7 +74,7 @@ class NYTScraper:
                     time.sleep(np.random.random())
                 except DuplicateKeyError:
                     print ('Duplicate Keys')
-            time.sleep(.1)
+            time.sleep(1)
 
 
     def _query(self):

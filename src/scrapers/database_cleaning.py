@@ -2,6 +2,7 @@ import scrape_tools as st
 import ipdb
 from collections import Counter
 from pymongo import MongoClient
+import pickle
 
 def remove_dups(table):
     ipdb.set_trace()
@@ -48,12 +49,23 @@ def table_to_list(table):
 if __name__ == '__main__':
     fox_table = st.open_database_collection('articles_fox')
     fox = table_to_list(fox_table)
+    mini_fox = fox[:100]
 
     hp_table = st.open_database_collection('articles_hp')
     hp = table_to_list(hp_table)
+    mini_hp = hp[:100]
 
     nyt_table = st.open_database_collection('articles_nyt')
     nyt = table_to_list(nyt_table)
+    mini_nyt = nyt[:100]
+
+    ad_table = st.open_database_collection('ad_transcripts')
+    ads = table_to_list(ad_table)
+    mini_ads = ads[:100]
+
+    data_list = [mini_ads, mini_fox, mini_hp, mini_nyt]
+    with open('toy_data.pkl', 'wb') as f:
+        pickle.dump(data_list, f)
 
 
 
