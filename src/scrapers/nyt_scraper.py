@@ -41,6 +41,7 @@ class NYTScraper:
     def _page_loop(self, total_pages):
         for page in range(total_pages):
             self.payload['page'] = str(page)
+            time.sleep(0.1)
             response = self._query()
 
             if response == None:
@@ -69,12 +70,11 @@ class NYTScraper:
                     doc['content'] = article_content
                     doc['date'] = self.date
                     self.table.insert_one(doc)
-
                     print(self.i, ':', article_content[:80])
                     time.sleep(np.random.random())
                 except DuplicateKeyError:
                     print ('Duplicate Keys')
-            time.sleep(1)
+            time.sleep(.1)
 
 
     def _query(self):
@@ -105,5 +105,5 @@ class NYTScraper:
 if __name__ == '__main__':
     scraper=NYTScraper()
     max_date = dt.datetime(2017, 11, 1)
-    min_date = dt.datetime(2016, 11, 1)
+    min_date = dt.datetime(2016, 4, 21)
     scraper.collect_data(min_date, max_date)
