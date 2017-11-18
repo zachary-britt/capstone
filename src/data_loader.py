@@ -47,7 +47,7 @@ def load_toy():
 
 def loader_formatter():
 
-    fox, hp, nyt, ads = loader()
+    ads, fox, hp, nyt = loader()
 
 if __name__ == '__main__':
     loader()
