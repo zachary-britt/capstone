@@ -17,25 +17,25 @@ def load():
     fox_table = st.open_database_collection('articles_fox')
     fox = table_to_list(fox_table)
     # df_fox = pd.DataFrame(df_fox)
-    mini_fox = fox[:100]
+    # mini_fox = fox[:100]
 
     hp_table = st.open_database_collection('articles_hp')
     hp = table_to_list(hp_table)
-    mini_hp = hp[:100]
+    # mini_hp = hp[:100]
 
     nyt_table = st.open_database_collection('articles_nyt')
     nyt = table_to_list(nyt_table)
-    mini_nyt = nyt[:100]
+    # mini_nyt = nyt[:100]
 
     ad_table = st.open_database_collection('ad_transcripts')
     ads = table_to_list(ad_table)
-    mini_ads = ads[:100]
+    # mini_ads = ads[:100]
 
-    data_list = [mini_ads, mini_fox, mini_hp, mini_nyt]
-    with open('../data/toy_data.pkl', 'wb') as f:
-        pickle.dump(data_list, f)
+    # data_list = [mini_ads, mini_fox, mini_hp, mini_nyt]
+    # with open('../data/toy_data.pkl', 'wb') as f:
+    #     pickle.dump(data_list, f)
 
-    return fox, hp, nyt, ads
+    return ads, fox, hp, nyt
 
 
 
