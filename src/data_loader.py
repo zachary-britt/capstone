@@ -23,9 +23,9 @@ def load():
     hp = table_to_list(hp_table)
     # mini_hp = hp[:100]
 
-    nyt_table = st.open_database_collection('articles_nyt')
-    nyt = table_to_list(nyt_table)
-    # mini_nyt = nyt[:100]
+    reu_table = st.open_database_collection('articles_reuters')
+    reu = table_to_list(reu_table)
+    # mini_reu = reu[:100]
 
     ad_table = st.open_database_collection('ad_transcripts')
     ads = table_to_list(ad_table)
@@ -35,7 +35,8 @@ def load():
     # with open('../data/toy_data.pkl', 'wb') as f:
     #     pickle.dump(data_list, f)
 
-    return ads, fox, hp, nyt
+
+    return ads, fox, hp, reu
 
 
 
@@ -47,7 +48,7 @@ def load_toy():
 
 def loader_formatter():
 
-    ads, fox, hp, nyt = loader()
+    ads, fox, hp, reu = loader()
 
 if __name__ == '__main__':
     loader()

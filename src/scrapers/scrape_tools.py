@@ -12,6 +12,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 
+
+
+
 def open_mongo_client():
     username = urllib.parse.quote_plus('admin')
     password = urllib.parse.quote_plus('admin123')
@@ -66,7 +69,12 @@ def souper(url, on_browser=True, saved=False, x_ind = None):
             return None
     else:
         try:
-            html = requests.get(url).text
+            response = requests.get(url)
+            if response.status_code != 200:
+                print ('WARNING', response.status_code)
+                return None
+            else:
+                html = response.text
         except:
             print("Failed to load with requests")
             return None
@@ -85,3 +93,7 @@ def table_grabber(table, field=None):
         cur = table.find()
     while cur.alive:
         yield cur.next()
+
+def table_to_list(table):
+    gen = table_grabber(table)
+    return list(gen)

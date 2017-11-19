@@ -3,13 +3,13 @@ import pandas as pd
 from datetime import datetime as dt
 
 if __name__ == '__main__':
-    ads, fox, hp, nyt = load()
+    ads, fox, hp, reu = load()
     #ads, fox, hp, nyt = load_toy()
 
     ads_df = pd.DataFrame.from_dict(ads)
     fox_df = pd.DataFrame.from_dict(fox)
     hp_df = pd.DataFrame.from_dict(hp)
-    nyt_df = pd.DataFrame.from_dict(nyt)
+    reu_df = pd.DataFrame.from_dict(reu)
 
     ads_df=ads_df[ads_df['supports'].isin(('Hillary Clinton','Donald Trump'))]
     ads_df['source'] = ads_df['supports']
@@ -21,3 +21,5 @@ if __name__ == '__main__':
     hp_df.drop('author', axis=1, inplace=True)
     hp_df['date'] = hp_df.date.apply( dt.date )
     hp_df['source'] = 'hp'
+
+    reu_df

@@ -32,4 +32,5 @@ def table_to_list(table):
 
 
 if __name__ == '__main__':
-    remove_dups(nyt_table)
+    table = st.open_database_collection('articles_reuters')
+    remove_dups(table)
