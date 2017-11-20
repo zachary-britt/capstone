@@ -1,8 +1,7 @@
-import data_loader as dl
+import formatter as ft
 import pandas as pd
 
 if __name__ == '__main__':
 
-    fox_df, hp_df, reu_df, nyt_df, ads_df = dl.load_dfs()
-
+    fox_df, hp_df, reu_df = ft.loader_formatter()
     

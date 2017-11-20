@@ -26,7 +26,7 @@ def open_mongo_client():
 
 def open_database_collection(name):
     client = open_mongo_client()
-    db = client['news']
+    db = client['articles']
     table = db[name]
     return table
 
