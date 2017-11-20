@@ -1,54 +1,41 @@
 import sys
 sys.path.insert(0, '/home/zachary/dsi/capstone/src/scrapers')
 import scrape_tools as st
-from database_cleaning import table_to_list
 import pandas as pd
-# import formatter
 import pickle
-
-def load():
-    import sys
-    sys.path.insert(0, '/home/zack/dsi/capstone/src/scrapers')
-    import scrape_tools as st
-    from database_cleaning import table_to_list
-    import pandas as pd
-    import pickle
-
-    fox_table = st.open_database_collection('articles_fox')
-    fox = table_to_list(fox_table)
-    # df_fox = pd.DataFrame(df_fox)
-    # mini_fox = fox[:100]
-
-    hp_table = st.open_database_collection('articles_hp')
-    hp = table_to_list(hp_table)
-    # mini_hp = hp[:100]
-
-    reu_table = st.open_database_collection('articles_reuters')
-    reu = table_to_list(reu_table)
-    # mini_reu = reu[:100]
-
-    ad_table = st.open_database_collection('ad_transcripts')
-    ads = table_to_list(ad_table)
-    # mini_ads = ads[:100]
-
-    # data_list = [mini_ads, mini_fox, mini_hp, mini_nyt]
-    # with open('../data/toy_data.pkl', 'wb') as f:
-    #     pickle.dump(data_list, f)
+from datetime import datetime as dt
 
 
-    return ads, fox, hp, reu
+def load_dfs():
+    fox_df = st.open_as_df('articles_fox')
+    hp_df = st.open_as_df('articles_hp')
+    reu_df = st.open_as_df('articles_reuters')
+    nyt_df = st.open_as_df('articles_nyt')
+    ads_df = st.open_as_df('ad_transcripts')
 
 
+    ads_df=ads_df[ads_df['supports'].isin(('Hillary Clinton','Donald Trump'))]
+    ads_df['source'] = ads_df['supports']
+    ads_df.drop('supports', axis=1, inplace=True)
 
-def load_toy():
-    import pickle
-    with open('../data/toy_data.pkl','rb') as f:
-        data_tup = pickle.load(f)
-    return data_tup
+    fox_df['date'] = fox_df.date.apply( lambda date_str: dt.date(dt.strptime(date_str, '%Y-%m-%d')))
+    fox_df['source'] = 'fox'
 
-def loader_formatter():
+    hp_df.drop('author', axis=1, inplace=True)
+    hp_df['date'] = hp_df.date.apply( dt.date )
+    hp_df['source'] = 'hp'
 
-    ads, fox, hp, reu = loader()
+    reu_df['source'] = 'reu'
+
+    return fox_df, hp_df, reu_df, nyt_df, ads_df
+
+
+# def load_toy():
+#     import pickle
+#     with open('../data/toy_data.pkl','rb') as f:
+#         data_tup = pickle.load(f)
+#     return data_tup
+
 
 if __name__ == '__main__':
-    loader()
+    fox_df, hp_df, reu_df, nyt_df, ads_df = load_dfs()

@@ -7,6 +7,8 @@ import time
 from selenium import webdriver
 import codecs
 
+import pandas as pd
+
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
@@ -97,3 +99,9 @@ def table_grabber(table, field=None):
 def table_to_list(table):
     gen = table_grabber(table)
     return list(gen)
+
+def open_as_df(table_name):
+    table = open_database_collection(table_name)
+    t_list = table_to_list(table)
+    df = pd.DataFrame(t_list)
+    return df
