@@ -15,6 +15,26 @@ https://thesocietypages.org/socimages/2017/09/28/the-different-media-spheres-of-
 
 My goal is to tackle this by reading the text itself.
 
+First the text is pre-processed and obfuscated  by removing sentences which clearly identify the source of the article. 
+
+e.g.: 
+
+	"Chris Stirewalt is the politics editor for Fox News. Brianna McClelland contributed to this report. Want FOX News Halftime Report in your inbox every day? Sign up here." 
+	
+gets cut, along with other references to the news source. (replacing 'HuffPost' with 'this newspaper' and so on)
+
+
+Next the text is chunked and annotated with scpaCy.
+
+this turns:
+
+	U.S. President Donald Trump will meet with Russian President Vladimir Putin next week at a summit in Germany that brings two world leaders whose political fortunes have become intertwined face-to-face for the first time. 
+	
+into:
+
+	U.S._President_Donald_Trump|ENT will|VERB meet|VERB with|ADP Russian_President_Vladimir_Putin|ENT next_week|DATE at|ADP a|DET summit|NOUN in|ADP Germany|ENT that|ADJ brings|VERB two|CARDINAL world_leaders|NOUN whose|ADJ political_fortunes|NOUN have|VERB become|VERB intertwined|ADJ face|NOUN -|PUNCT to|ADP -|PUNCT face|NOUN for|ADP the|DET first_time|NOUN .|PUNCT'
+
+
 My plan is to organize the text around key figures, groups and concepts. E.g. ['Elizabeth Warren', 'Democrats', 'Socialism']
 
 When these entities are mentioned in the text, they can be associated with sentiment in their context. By comparint the sentiment in one article to another article on a similar topic, we can find a sentimental variance. Thus we can try to find and article with no sentiment and articles with extreme sentiment.
@@ -34,35 +54,5 @@ MVP: Model which can assign similary scores between news articles and political 
 Bonus: Web app which can accept text and return a political metric.
 
 
-<br>
-
-IN PROGRESS THOUGHTS:
-<br>
-So we have:
-  -Republican ads.
-  
-  -Democratic ads.
-
-  -Republican leaning political news articles
-  
-  -Democratic leaning political news articles
-<br>
-  
-  The simplest thing might be to train on the ad data, building a network that distinguishes between republican and democratic ads, and then use the news articles purely as a test. If the ads themselves can sort the articles, that would be great. 
-  
-  My concern is that the domain shift between transcripts of spoken advertising and written news articles will be too great. Thus it would help to also train on the news articles. However that creates a plethora of other issues. Once we're training on news articles we have to either be pre-assigning labels to the articles, or be performing some sort of unsupervised learning. If we just ask the network to classify an article as "FOX" or "HP" and then assign a loss based on missed classifications, we could just be learning the writing style of FOX and HP. There's also a leakage nightmare, as articles have clues like, "woman house told FOX news," in their text.
-  This also weakens the value of the model, because it's looking for similarity to FOX/HP rather than similarity to actual propoganda. I can live with it, but it's less interesting.
-  
-<br>
-	
-  A possible solution is to cut articles into sentences and remove sentences with compromising information (Author names, Journal names). We could further limit the data to just sentences with identified Republican/Democratic entities. 
-
-<br>
-	
-  The original idea of how to make this work was to not directly ask for party identification, but to rather use advertisement as entity sentiment labels. They revolve around entities they support/attack and have intense negative/positive sentiment. By training for entity sentiment, you can then look for entity sentiment in news articles, perhaps a few sentences before to a few sentences after a tagged entity is mentioned. We then collect all of the tagged entities mentioned and produce a vector of entity-sentiment pairs for the article. 
-  
-  We can then concatenate each document vector into a big ol matrix and run SVD. Ideally the first component will be the left/right partisan divide.
-	
-	
 
 
