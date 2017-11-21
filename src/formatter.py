@@ -248,17 +248,44 @@ def loader_formatter():
     hp_df = cull_shorts(hp_df)
     reu_df = cull_shorts(reu_df)
 
-    return fox_df, hp_df, reu_df
+    dfs = [fox_df, hp_df, reu_df]
+
+    X = np.hstack([ (lambda x: x.content.values)(df) for df in dfs ])
+    D = np.hstack([ (lambda x: x.date.values)(df) for df in dfs ])
+    y = np.hstack([ (lambda x: x.source.values)(df) for df in dfs ])
+
+
+    # X = np.hstack( [fox_df.content.values, reu_df.content.values, hp_df.content.values] )
+    # y = np.hstack( [fox_df.source.values, reu_df.source.values, hp_df.source.values])
+
+    n = X.shape[0]
+    inds = np.arange(n)
+
+    np.random.seed(4914)
+    np.random.shuffle(inds)
+
+    X = X[inds]
+    D = D[inds]
+    y = y[inds]
+
+    path = '/home/zachary/dsi/capstone/data/articles2/articles.npz'
+    with open(path, 'wb') as file_:
+        np.savez(file_, content=X, date=D, source=y)
+
+    return X, D, y
 
 if __name__ == '__main__':
 
-    dfs = dl.load_dfs()
-    dfs = [universal_cleaner(df) for df in dfs]
+    # dfs = dl.load_dfs()
+    # dfs = [universal_cleaner(df) for df in dfs]
 
-    fox_df, hp_df, reu_df = dfs
+    # fox_df, hp_df, reu_df = dfs
 
-    fox_df = fox_clean(fox_df)
-    hp_df = hp_clean(hp_df)
-    reu_df = reu_clean(reu_df)
+    # fox_df = fox_clean(fox_df)
+    # hp_df = hp_clean(hp_df)
+    # reu_df = reu_clean(reu_df)
     # nyt_df = nyt_clean(nyt_df)
     # ads_df = ads_clean(ads_df)
+
+
+    X, D, y = loader_formatter()
