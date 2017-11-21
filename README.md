@@ -57,9 +57,11 @@ These annotated words and chunks are then vectorized into dense array of 100 or 
 
 https://radimrehurek.com/gensim/models/word2vec.html
 
-aside: (While we can't train the inital model on the words in the test set, Gensim lets us continue to add more words and update the model after it has already been trained. Thus after recieving a new test set article we can train the embedder on the new text, update the model, and then embed the text into vectors. This sounds like leakage, but is kosher as the embedder is an unsupervised model and totally indifferent to the labels.)
+The word vectorizer drops words which show up less than 5 times, so words which aren't in the vectorizer vocabulary are assigned 'RARE|POS' (with POS being the part of speech label). It's important that the model be able to handle RARE words effectively as new news articles on breaking topics are likely to contain new words and phrases. To help handle this: (aside) While we can't train the inital model on the words in the test set, Gensim lets us continue to add more words and update the model after it has already been trained. Thus after recieving a new test set article we can train the embedder on the new text, update the model, and then embed the text into vectors. This sounds like leakage, but is kosher as the embedder is an unsupervised model and totally indifferent to the labels.
 
 <br>
 
  
-With the text in each article transformed into a sequence of dense vectors, we can now run an LSTM RNN over the sequences and train the network with softmax classification.
+With the text in each article transformed into a sequence of dense vectors, we can now run an LSTM RNN over the sequences and train the network with softmax classification. For bias classification labels we just use the source of the article. HP being a proxy for left, Reuters a proxy for neutral, and Fox a proxy for right. While this asks the network to simply identify the source of the article, the goal is to be able to classify articles from arbitrary sources along the spectrum of left to right. Thus it's important that the model train on the political sentiment in the text, and not on the editorial style/formatting quirks of each source. 
+
+A future goal is to incorporate politically charged, >paragraph length comments from reddit. Reddit is a highly rich source as A) comments are uniformly formatted, B) the Reddit hivemind produces upvoted comments which represent the collective views of a subreddit, C) the writing styles and diction are boundlessly varied, which should enormously increase the predictive strength of the model.
