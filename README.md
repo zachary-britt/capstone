@@ -57,11 +57,34 @@ These annotated words and chunks are then vectorized into dense array of 100 or 
 
 https://radimrehurek.com/gensim/models/word2vec.html
 
-The word vectorizer drops words which show up less than 5 times, so words which aren't in the vectorizer vocabulary are assigned 'RARE|POS' (with POS being the part of speech label). It's important that the model be able to handle RARE words effectively as new news articles on breaking topics are likely to contain new words and phrases. To help handle this: (aside) While we can't train the inital model on the words in the test set, Gensim lets us continue to add more words and update the model after it has already been trained. Thus after recieving a new test set article we can train the embedder on the new text, update the model, and then embed the text into vectors. This sounds like leakage, but is kosher as the embedder is an unsupervised model and totally indifferent to the labels.
+The word vectorizer drops words which show up less than 5 times, so words which aren't in the vectorizer vocabulary are assigned 'RARE|POS' (with POS being the part of speech label). It's important that the model be able to handle RARE words effectively as new news articles on breaking topics are likely to contain new words and phrases. To help handle this: (aside) While we can't initially train the word embedder on the words in the test set, Gensim lets us continue to add more words and update the model after it has already been trained. Thus after recieving a new test set article we can train the embedder on the new text, update the model, and then embed the text into vectors. This sounds like leakage, but is kosher as the embedder is an unsupervised model and totally indifferent to the labels.
 
 <br>
 
- 
+i.e.:
+
+	1) All words preprocessed and annotated.
+	2) Train test split
+	3) word2vec trained on training set
+	4) training set vectorized
+	5a) RNN cross validation training via training set
+	5b) Search for optimal hyper-parameters 
+	
+	(model parameters frozen)
+
+	6) for test_article in test_set:
+		word2vec updated by adding test_article text
+		test_article vectorized
+		test_article_vector classified via RNN
+	
+	7) Produce confusion matrix and performance metrics
+	
+	8) Repeat model training pipeline, but with entire corpus in training set
+	9) Ask model to predict bias for Salon/Brietart to see if model generalizes to articles from new sources
+
+<br>
+
+
 With the text in each article transformed into a sequence of dense vectors, we can now run an LSTM RNN over the sequences and train the network with softmax classification. For bias classification labels we just use the source of the article. HP being a proxy for left, Reuters a proxy for neutral, and Fox a proxy for right. While this asks the network to simply identify the source of the article, the goal is to be able to classify articles from arbitrary sources along the spectrum of left to right. Thus it's important that the model train on the political sentiment in the text, and not on the editorial style/formatting quirks of each source. 
 
 A future goal is to incorporate politically charged, >paragraph length comments from reddit. Reddit is a highly rich source as A) comments are uniformly formatted, B) the Reddit hivemind produces upvoted comments which represent the collective views of a subreddit, C) the writing styles and diction are boundlessly varied, which should enormously increase the predictive strength of the model.
