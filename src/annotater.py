@@ -2,8 +2,6 @@
 Highly borrowed from explosion's sense2vec
 '''
 
-
-from gensim.models import Word2Vec
 import spacy
 
 from joblib import Parallel, delayed
