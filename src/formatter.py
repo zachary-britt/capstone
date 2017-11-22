@@ -252,7 +252,7 @@ def loader_formatter():
 
     X = np.hstack([ (lambda x: x.content.values)(df) for df in dfs ])
     D = np.hstack([ (lambda x: x.date.values)(df) for df in dfs ])
-    y = np.hstack([ (lambda x: x.source.values)(df) for df in dfs ])
+    y = np.hstack([ (lambda x: x.bias.values)(df) for df in dfs ])
 
 
     # X = np.hstack( [fox_df.content.values, reu_df.content.values, hp_df.content.values] )
@@ -264,15 +264,19 @@ def loader_formatter():
     np.random.seed(4914)
     np.random.shuffle(inds)
 
-    X = X[inds]
-    D = D[inds]
-    y = y[inds]
+    contents = X[inds]
+    dates = D[inds]
+    biases = y[inds]
 
-    path = '/home/zachary/dsi/capstone/data/articles2/articles.npz'
-    with open(path, 'wb') as file_:
-        np.savez(file_, content=X, date=D, source=y)
+    # path = '/home/zachary/dsi/capstone/data/articles2/articles.npz'
+    # with open(path, 'wb') as file_:
+    #     np.savez(file_, content=X, date=D, bias=y)
 
-    return X, D, y
+    df = pd.DataFrame({'content':contents, 'date':dates, 'bias':biases})
+    df.to_json('/home/zachary/dsi/capstone/data/formatted_arts.json', orient='records',
+            force_ascii=False)
+
+    return df
 
 if __name__ == '__main__':
 
@@ -288,4 +292,4 @@ if __name__ == '__main__':
     # ads_df = ads_clean(ads_df)
 
 
-    X, D, y = loader_formatter()
+    df = loader_formatter()

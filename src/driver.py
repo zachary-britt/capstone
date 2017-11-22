@@ -6,9 +6,10 @@ import baseline_model
 
 if __name__ == '__main__':
 
-    X, D, y = ft.loader_formatter()
+    df = ft.loader_formatter()
+
+    X = df.content.values
+    y = df.bias.values
 
     baseline_model.tfidf_NB_baseline(X, y)
     baseline_model.cos_sim(X, y)
-
-    
