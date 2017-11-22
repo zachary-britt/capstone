@@ -66,12 +66,10 @@ def annotate_text(batch_id, input_, out_dir):
     print('Batch', batch_id)
     nlp = spacy.load('en', matcher = None)
     output=input_
-    #ipdb.set_trace()
     for i, record in enumerate(input_):
         text = record[1]
         text = transform_doc(nlp(strip_meta(text)))
         output[i][1] = text
-    #ipdb.set_trace()
     data = np.array(output)
     df = pd.DataFrame(data, columns=['bias','content','date'])
     df.to_json(out_loc, orient='records', force_ascii=False)
@@ -111,7 +109,6 @@ def main(   in_loc='/home/zachary/dsi/capstone/data/formatted_arts.json',
             n_workers=2,
             rebuild=False
         ):
-    #ipdb.set_trace()
     from s2v_transformer import annotate_text
     df = pd.read_json(in_loc, orient='records')
     lst = df.values.tolist()
@@ -121,7 +118,6 @@ def main(   in_loc='/home/zachary/dsi/capstone/data/formatted_arts.json',
     func = annotate_text
     func(0, lst, out_dir)
     #parallelize(func, enumerate(chunk), n_workers, [out_dir])
-
 
 
 #at the bottom because atom can't parse this right
