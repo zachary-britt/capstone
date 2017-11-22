@@ -275,12 +275,6 @@ def reu_clean(df):
     pool = Pool(4)
     df['content'] = pool.map(reu_clean_text, df['content'])
     return df
-#
-# def nyt_clean(df):
-#     return df
-#
-# def ads_clean(df):
-#     return df
 
 
 def find_leak(df, keyword):
@@ -317,10 +311,6 @@ def loader_formatter():
     D = np.hstack([ (lambda x: x.date.values)(df) for df in dfs ])
     y = np.hstack([ (lambda x: x.bias.values)(df) for df in dfs ])
 
-
-    # X = np.hstack( [fox_df.content.values, reu_df.content.values, hp_df.content.values] )
-    # y = np.hstack( [fox_df.source.values, reu_df.source.values, hp_df.source.values])
-
     n = X.shape[0]
     inds = np.arange(n)
 
@@ -331,29 +321,14 @@ def loader_formatter():
     dates = D[inds]
     biases = y[inds]
 
-    # path = '/home/zachary/dsi/capstone/data/articles2/articles.npz'
-    # with open(path, 'wb') as file_:
-    #     np.savez(file_, content=X, date=D, bias=y)
 
     df = pd.DataFrame({'content':contents, 'date':dates, 'bias':biases})
-    #df.save
-    # df.to_json('/home/zachary/dsi/capstone/data/formatted_arts.json', orient='records',
-    #         force_ascii=False)
+    path = '/home/zachary/dsi/capstone/data/formatted_arts.pkl'
+    df.to_pickle(path)
+
 
     return df
 
 if __name__ == '__main__':
-
-    # dfs = dl.load_dfs()
-    # dfs = [universal_cleaner(df) for df in dfs]
-
-    # fox_df, hp_df, reu_df = dfs
-
-    # fox_df = fox_clean(fox_df)
-    # hp_df = hp_clean(hp_df)
-    # reu_df = reu_clean(reu_df)
-    # nyt_df = nyt_clean(nyt_df)
-    # ads_df = ads_clean(ads_df)
-
 
     df = loader_formatter()
