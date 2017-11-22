@@ -59,28 +59,31 @@ def strip_meta(text):
 
 
 def annotate_text(batch_id, input_, out_dir):
-    out_loc = path.join(out_dir, '%d.txt' % batch_id)
+    #out_loc = path.join(out_dir, '%d.json' % batch_id)
+    out_loc = path.join(out_dir, 'arts.json')
     if path.exists(out_loc):
         return None
     print('Batch', batch_id)
     nlp = spacy.load('en', matcher = None)
-    with io.open(out_loc, 'w', encoding='utf8') as file_:
-        for record in input_:
-            bias, text, date = record
-            text = transform_doc(nlp(strip_meta(text)))
-            d = {'bias':bias, 'content':text, 'date':date}
-            json.dump(d, file_, ensure_ascii=False)
+    output=input_
+    #ipdb.set_trace()
+    for i, record in enumerate(input_):
+        text = record[1]
+        text = transform_doc(nlp(strip_meta(text)))
+        output[i][1] = text
+    #ipdb.set_trace()
+    data = np.array(output)
+    df = pd.DataFrame(data, columns=['bias','content','date'])
+    df.to_json(out_loc, orient='records', force_ascii=False)
 
 def transform_doc(doc):
     for ent in doc.ents:
-        ent.merge()
-    try:
-        for nc in doc.noun_chunks:
-            while len(nc) > 1 and nc[0].dep_ not in ('advmod', 'amod', 'compound'):
-                nc = nc[1:]
-            nc.merge()
-    except:
-        pass
+        ent.merge(ent_type=ent.root.ent_type, pos=ent.root.pos)
+
+    for nc in doc.noun_chunks:
+        while len(nc) > 1 and nc[0].dep_ not in ('advmod', 'amod', 'compound'):
+            nc = nc[1:]
+        nc.merge(ent_type=nc.root.ent_type, pos=nc.root.pos)
 
     strings = []
     for sent in doc.sents:
@@ -105,18 +108,19 @@ def represent_word(word):
 
 def main(   in_loc='/home/zachary/dsi/capstone/data/formatted_arts.json',
             out_dir='/home/zachary/dsi/capstone/data/annotated_arts',
-            n_workers=4,
+            n_workers=2,
             rebuild=False
         ):
+    #ipdb.set_trace()
     from s2v_transformer import annotate_text
     df = pd.read_json(in_loc, orient='records')
-    arr = df.values
+    lst = df.values.tolist()
 
-    chunk_size = 1000
-    chunk = partition(chunk_size, arr)
+    chunk_size = 500
+    chunk = partition(chunk_size, lst)
     func = annotate_text
-
-    parallelize(func, enumerate(chunk), n_workers, [out_dir])
+    func(0, lst, out_dir)
+    #parallelize(func, enumerate(chunk), n_workers, [out_dir])
 
 
 

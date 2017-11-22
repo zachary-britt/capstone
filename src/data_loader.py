@@ -13,7 +13,7 @@ def load_dfs():
     # nyt_df = st.open_as_df('nyt')
     # ads_df = st.open_as_df('ads')
 
-    ipdb.set_trace()
+    #ipdb.set_trace()
 
     # ads_df=ads_df[ads_df['supports'].isin(('Hillary Clinton','Donald Trump'))]
     # ads_df['source'] = ads_df['supports']
