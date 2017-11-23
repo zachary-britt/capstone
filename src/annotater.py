@@ -1,4 +1,9 @@
 '''
+DEPRECATED
+'''
+
+
+'''
 Highly borrowed from explosion's sense2vec
 '''
 

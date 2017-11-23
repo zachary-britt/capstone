@@ -1,3 +1,8 @@
+'''
+DEPRECATED
+'''
+
+
 from __future__ import print_function, unicode_literals, division
 import io
 import bz2

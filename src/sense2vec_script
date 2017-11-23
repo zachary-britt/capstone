@@ -1,5 +1,8 @@
-#!/bin/bash
+#'''
+#DEPRECATED
+#'''
 
+#!/bin/bash
 src_path='/home/zachary/dsi/capstone/src'
 sense2vec_path='/home/zachary/dsi/sense2vec/bin'
 data_path='/home/zachary/dsi/capstone/data/articles2'
