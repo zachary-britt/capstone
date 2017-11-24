@@ -15,27 +15,29 @@ def load_text():
     X = df.content.values
     y = df.bias.values
 
-    left_inds = np.argwhere( y == 'left' ).ravel()
-    right_inds = np.argwhere( y == 'right' ).ravel()
-    center_inds = np.argwhere( y == 'center' ).ravel()
+    # left_inds = np.argwhere( y == 'left' ).ravel()
+    # right_inds = np.argwhere( y == 'right' ).ravel()
+    # center_inds = np.argwhere( y == 'center' ).ravel()
+    #
+    #
+    # N_l = left_inds.shape[0]; N_r = right_inds.shape[0]
+    # N = N_l + N_r
+    #
+    # l_frac = N_l / N; r_frac = N_r / N;
+    # l_weight = 1 / l_frac; r_weight = 1 / r_frac;
+    #
+    # print('Suport:\n \t left: \t {} \n \t right:\t {}'.format(N_l, N_r))
+    # print('Weight:\n \t left: \t {} \n \t right:\t {}'.format(l_weight, r_weight))
+    #
+    # lr_inds = np.hstack([left_inds, right_inds])
+    # np.random.shuffle(lr_inds)
+    #
+    # X = X[lr_inds]
+    # y = y[lr_inds]
 
+    y = [{'left': bias=='left', 'center': bias=='center', 'right': bias=='right'} for bias in y]
 
-    N_l = left_inds.shape[0]; N_r = right_inds.shape[0]
-    N = N_l + N_r
-
-    l_frac = N_l / N; r_frac = N_r / N;
-    l_weight = 1 / l_frac; r_weight = 1 / r_frac;
-
-    print('Suport:\n \t left: \t {} \n \t right:\t {}'.format(N_l, N_r))
-    print('Weight:\n \t left: \t {} \n \t right:\t {}'.format(l_weight, r_weight))
-
-    lr_inds = np.hstack([left_inds, right_inds])
-    np.random.shuffle(lr_inds)
-
-    X = X[lr_inds]
-    y = y[lr_inds]
-
-    y = [{'POSITIVE': bias=='left'} for bias in y]
+    # y = np.array([{'left': bias=='left'} for bias in y])
 
     return train_test_split(X,y, test_size=0.2)
 
@@ -73,7 +75,9 @@ if __name__ == '__main__':
     nlp = spacy.load('en_core_web_lg')
     textcat = nlp.create_pipe('textcat')
     nlp.add_pipe(textcat, last=True)
-    textcat.add_label('POSITIVE')
+    textcat.add_label('left')
+    textcat.add_label('center')
+    textcat.add_label('right')
 
     #ipdb.set_trace()
 
@@ -91,22 +95,22 @@ if __name__ == '__main__':
     # get names of other pipes to disable them during training
     other_pipes = [pipe for pipe in nlp.pipe_names if pipe != 'textcat']
     with nlp.disable_pipes(*other_pipes):  # only train textcat
-        optimizer = nlp.begin_training()
+        optimizer = nlp.begin_training(n_workers = -1)
         print("Training the model...")
         print('{:^5}\t{:^5}\t{:^5}\t{:^5}'.format('LOSS', 'P', 'R', 'F'))
         seen = 0
         for i in range(n_iter):
             losses = {}
             # batch up the examples using spaCy's minibatch
-            batches = minibatch(train_data, size=compounding(32., 64., 1.01))
+            batches = minibatch(train_data, size=compounding(4., 64., 1.01))
             #batches = minibatch(train_data, size=124)
             for j,batch in enumerate(batches):
                 texts, annotations = zip(*batch)
                 seen += len(texts)
                 nlp.update(texts, annotations, sgd=optimizer, drop=0.2,
                            losses=losses)
-                if j%40 == 0 and j != 0:
-                    print( '\t\t\t\t\t\tVal after:',seen)
+                if seen > 5000:
+                    seen = 0
                     with textcat.model.use_params(optimizer.averages):
                         # evaluate on the dev data split off in load_data()
                         scores = evaluate(nlp.tokenizer, textcat, val_texts, val_cats)
