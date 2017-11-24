@@ -7,7 +7,7 @@ from keras.layers import RNN, GRU, LSTM, StackedRNNCells, CuDNNLSTM, CuDNNGRU
 from keras.layers import Masking, Dense, Dropout, Activation, Flatten
 from keras.models import Sequential
 from keras.preprocessing.sequence import pad_sequences
-from keras.optimizers import Adam
+from keras.optimizers import Adam, SGD
 from keras.callbacks import EarlyStopping
 from keras import losses
 
@@ -23,10 +23,16 @@ import ipdb
 from pprint import pprint
 
 
+def get_data_files_list(index_range):
+    data_dir = '/home/zachary/dsi/capstone/data/df_w_tensors/'
+    return [data_dir + 'df_{}.pkl'.format(index) for index in index_range]
+
+
 def iter_data_files():
     data_dir = '/home/zachary/dsi/capstone/data/df_w_tensors/'
     for file_ in os.listdir(data_dir):
         yield os.path.join(data_dir, file_)
+
 
 def load_one():
     data_dir = '/home/zachary/dsi/capstone/data/df_w_tensors/'
@@ -40,11 +46,10 @@ def labeller_bineraizer(y):
     return np.hstack([left, center, right])
 
 def labeller_bineraizer_no_center(y):
-    # left = np.where(y=='left', 1, 0).reshape(-1,1)
-    # right = np.where(y=='right', 1, 0).reshape(-1,1)
+    left = np.where(y=='left', 1, 0).reshape(-1,1)
+    right = np.where(y=='right', 1, 0).reshape(-1,1)
+    return np.hstack([left, right])
 
-    y = np.where(y=='left', np.array([1,0], np.array([0,1])))
-    return y
 
 def de_binarize(y):
     convert = { np.array([1,0,0]):'left',np.array([0,1,0]):'center',np.array([0,0,1]):'right'}
@@ -57,6 +62,7 @@ def de_binarize(y):
     return ys
 
 class Net:
+
     def __init__(self, seed, verbose=True):
 
         np.random.seed(seed)  # for reproducibility
@@ -69,7 +75,6 @@ class Net:
         self.batch_size = 64
         # Max number of passes through the entire train dataset (Early stopping
         # prevents unnecessary epochs)
-        nb_epoch = 10
 
 
         # dense activation function
@@ -82,14 +87,14 @@ class Net:
         #dropout rate used in dropouts
         self.dr = 0.3
 
-        patience = 3
 
-        X_train, y_train, X_test, y_test = self.load_and_configure_data()
 
-        if self.verbose:
-            print('X_train shape:', X_train.shape)
-            print(X_train.shape[0], 'train samples')
-            print(X_test.shape[0], 'test samples')
+        self.check_data_dim()
+
+        # if self.verbose:
+        #     print('X_train shape:', X_train.shape)
+        #     print(X_train.shape[0], 'train samples')
+        #     print(X_test.shape[0], 'test samples')
 
         self.model = Sequential()
         # self.build_CuDNN_LSTM()
@@ -97,82 +102,76 @@ class Net:
         self.build_layers(dense_sequence, dense_activation)
         self.compile(lr)
 
-        #ipdb.set_trace()
 
-        self.train(X_train, y_train, self.batch_size, nb_epoch, patience)
-        self.recorded_score = self.score(X_test, y_test)
+    def check_data_dim(self):
 
-    #
-    # def check_data_dim(self):
-    #
-    #     print( "Checking data dim")
-    #     df = load_one()
-    #     X = df.tensor.values
-    #
-    #     self.features = X[0].shape[1]
-    #     self.timesteps = 1000
-    #     self.nb_classes_ = 2
+        print( "Checking data dim")
+        df = load_one()
+        X = df.tensor.values
+
+        self.features = X[0].shape[1]
+        self.timesteps = 1000
+        self.nb_classes_ = 2
 
 
-    def load_and_configure_data(self):
-        # the data, shuffled and split between train and test sets
-        #(X_train, y_train), (X_test, y_test) = mnist.load_data()
+    def load_and_configure_data(self, file_batch, purpose):
 
-        # load just a couple files for now:
+        ''' left vs right data loading '''
 
-        file_load_count = 4
-
-        f_gen = iter_data_files()
-        file_paths = []
-        for _ in range(file_load_count):
-            file_paths.append(next(f_gen))
+        print(" Loading data for: {}".format(purpose))
 
         from multiprocessing import Pool
         pool = Pool(4)
 
-        print('Loading DataFrames')
+        print('Loading DataFrames from:')
+        for path_ in file_batch:
+            print("\t",path_)
 
-        dfs = pool.map( pd.read_pickle, file_paths )
+        dfs = pool.map( pd.read_pickle, file_batch )
         df = pd.concat(dfs)
 
+        pool.close()
+        pool.join()
 
         print('DataFrames loaded ')
 
-        df_train, df_test = train_test_split(df, test_size = 0.1)
+
+        y = df.bias.values
+        X = df.tensor.values
+
+
+        ''' balancing classes, removing center'''
+
+        left_inds = np.argwhere( y == 'left' ).ravel()
+        right_inds = np.argwhere( y == 'right' ).ravel()
+        center_inds = np.argwhere( y == 'center' ).ravel()
+
+        N_l = left_inds.shape[0]; N_r = right_inds.shape[0]
+        N = N_l + N_r
+
+        l_frac = N_l / N; r_frac = N_r / N;
+        l_weight = 1 / l_frac; r_weight = 1 / r_frac;
+
+        print('Suport:\n \t left: \t {} \n \t right:\t {}'.format(N_l, N_r))
+        print('Weight:\n \t left: \t {} \n \t right:\t {}'.format(l_weight, r_weight))
+
+        lr_inds = np.hstack([left_inds, right_inds])
+
+        np.random.shuffle(lr_inds)
+
+        X, y = X[lr_inds], y[lr_inds]
+
+        sample_weights = np.where(y=='left', l_weight, r_weight)
+
+
+        '''one hot encoding categories'''
+        y = labeller_bineraizer_no_center(y)
+
 
         ''' padding the sequences to be uniform length '''
-        lens = np.array(sorted(df_train.tensor.apply( lambda x: x.shape[0]).values))
-        n_samples = lens.shape[0]
+        X = pad_sequences(X, self.timesteps , dtype='float32', padding='pre', truncating='pre')
 
-        #TODO important hyper param? runtime effect?
-        # cutoff_percentile = .80
-
-        #cut off at sequences longer than cutoff_percentile
-        # max_len = lens[int(n_samples*cutoff_percentile)]
-
-        max_len = 1000
-
-        X_train = df_train.tensor.values
-        X_test = df_test.tensor.values
-
-        #TODO important hyper params?
-        X_train = pad_sequences(X_train, max_len , dtype='float32', padding='pre', truncating='pre')
-        X_test = pad_sequences(X_test, max_len , dtype='float32', padding='pre', truncating='pre')
-
-
-        y_train = df_train.bias.values
-        y_test = df_test.bias.values
-
-
-        self.features = X_train[0].shape[1]
-        self.timesteps = max_len
-
-        self.nb_classes_ = 3
-
-        y_train = labeller_bineraizer(y_train)
-        y_test = labeller_bineraizer(y_test)
-
-        return X_train, y_train, X_test, y_test
+        return X, y, sample_weights
 
 
     def build_CuDNN_LSTM(self, **kwrgs):
@@ -191,6 +190,7 @@ class Net:
         self.model.add(CuDNNLSTM(units=16, **CuDNN_LSTM_hypers))
 
         # self.model.add(CuDNNLSTM(units=16, **LSTM_hypers))
+
 
     def build_LSTM(self):
 
@@ -215,8 +215,6 @@ class Net:
         self.model.add(LSTM(units=10, **LSTM_hypers ))
 
 
-
-
     def build_layers(self, sequence, activation):
         # self.model.add(Flatten())
         # if self.verbose: print('Model flattened out to ', self.model.output_shape)
@@ -228,23 +226,79 @@ class Net:
         self.model.add(Dense(self.nb_classes_, activation='softmax')) # 3 final nodes
 
 
-
     def compile(self, lr):
-        adam=Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
-        self.model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=["accuracy"] )
+        # adam=Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+        # self.model.compile(loss='binary_crossentropy', optimizer=adam, metrics=["accuracy"] )
+        sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+        self.model.compile(loss='binary_crossentropy', optimizer=sgd, metrics=["accuracy"])
 
 
-    def train(self, X_train, y_train, batch_size, nb_epoch, patience):
-        # stops training when validation accuracy hasn't improved in "patience" epochs
-        early_stopping=EarlyStopping(monitor='val_acc', min_delta=0,
-            patience=patience, verbose=0, mode='auto')
+    def get_file_paths(self):
 
-        # during fit process watch train and test error simultaneously
-        self.model.fit(X_train, y_train, batch_size=batch_size, epochs=nb_epoch,
-                  verbose=self.verbose, validation_split=0.2, callbacks = [early_stopping])
 
-    def score(self, X_test, y_test):
-        score = self.model.evaluate(X_test, y_test, verbose=self.verbose)
+        train_file_inds = np.arange(16)
+        training_files = get_data_files_list(train_file_inds)
+
+        training_file_arr = np.array(training_files)
+        training_file_batches = list( training_file_arr.reshape(4,4) )
+
+        val_indicies = np.arange(16,18)
+        val_files = get_data_files_list(val_indicies)
+
+        test_indicies = np.arange(18,20)
+        test_files = get_data_files_list(test_indicies)
+
+        return training_file_batches, val_files, test_files
+
+
+    def training_data_gen(self, training_file_batches):
+        while True:
+            for file_batch in training_file_batches:
+                X, y, weights =  self.load_and_configure_data(file_batch, 'Training')
+                splits = np.arange(0, X.shape[0], self.batch_size)
+                batches = splits.shape[0]-1
+                print("training batches in file_batch: {}".format(batches))
+                for i in range(batches):
+                    X_batch = X[splits[i]: splits[i+1]]
+                    y_batch = y[splits[i]: splits[i+1]]
+                    w_batch = weights[splits[i]: splits[i+1]]
+                    yield (X_batch, y_batch, w_batch)
+
+
+    def val_data_gen(self, val_files):
+        while True:
+            X, y, weights =  self.load_and_configure_data(val_files, 'Validating')
+            splits = np.arange(0, X.shape[0], self.batch_size)
+            batches = splits.shape[0]-1
+            print("val batches: {}".format(batches))
+            for i in range(batches):
+                X_batch = X[splits[i]: splits[i+1]]
+                y_batch = y[splits[i]: splits[i+1]]
+                w_batch = weights[splits[i]: splits[i+1]]
+                yield (X_batch, y_batch, w_batch)
+
+
+    def train(self, nb_epochs):
+
+        training_file_batches, val_files, _ = self.get_file_paths()
+
+        training_gen = self.training_data_gen(training_file_batches)
+        val_gen = self.val_data_gen(val_files)
+
+        #sort of a guess, but not super important
+        tr_steps_per_epoch =  160
+        val_steps = 20
+
+        self.model.fit_generator(training_gen, steps_per_epoch = tr_steps_per_epoch, epochs=nb_epochs,
+                  verbose=self.verbose, validation_data=val_gen, validation_steps=val_steps)
+
+    def score(self):
+
+        _, _, test_files = self.get_file_paths(meta_batch_size, max_training_index)
+
+        X, y, _ = self.load_and_configure_data(test_files, 'Testing')
+
+        score = self.model.evaluate(X, y, verbose=self.verbose)
         # misses = np.sum self.model.predict
         # print('Test loss:', score[0])
         pprint(self.model.predict(X_test))
@@ -261,9 +315,11 @@ if __name__ == "__main__":
 
     net = Net(seed=200, verbose=True)
 
-    # epochs = 100
-    # for i in range epoch:
-    #     f_gen = iter_data_files()
+    nb_epochs = 10
+
+    net.train(nb_epochs)
+
+    net.score()
 
 
 
