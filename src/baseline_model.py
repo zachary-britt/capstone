@@ -29,9 +29,9 @@ def cos_sim(X, y):
 
     vectorizer = make_vectorizer()
 
-    fox_inds = np.argwhere(y == 'fox').ravel()
-    hp_inds = np.argwhere(y == 'hp').ravel()
-    reu_inds = np.argwhere(y == 'reu').ravel()
+    fox_inds = np.argwhere(y == 'right').ravel()
+    hp_inds = np.argwhere(y == 'left').ravel()
+    reu_inds = np.argwhere(y == 'center').ravel()
 
     X_fox = X[fox_inds]
     X_hp = X[hp_inds]

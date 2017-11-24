@@ -12,7 +12,5 @@ if __name__ == '__main__':
     d = df.date.values
     y = df.bias.values
 
-    # baseline_model.tfidf_NB_baseline(X, y)
-    # baseline_model.cos_sim(X, y)
-
-    
+    baseline_model.tfidf_NB_baseline(X, y)
+    baseline_model.cos_sim(X, y)
