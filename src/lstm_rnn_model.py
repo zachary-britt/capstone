@@ -97,8 +97,8 @@ class Net:
         #     print(X_test.shape[0], 'test samples')
 
         self.model = Sequential()
-        # self.build_CuDNN_LSTM()
-        self.build_LSTM()
+        self.build_CuDNN_LSTM()
+        # self.build_LSTM()
         self.build_layers(dense_sequence, dense_activation)
         self.compile(lr)
 
@@ -110,7 +110,7 @@ class Net:
         X = df.tensor.values
 
         self.features = X[0].shape[1]
-        self.timesteps = 1000
+        self.timesteps = 500
         self.nb_classes_ = 2
 
 
@@ -189,6 +189,10 @@ class Net:
 
         self.model.add(CuDNNLSTM(units=16, **CuDNN_LSTM_hypers))
 
+        CuDNN_LSTM_hypers['return_sequences'] = False
+
+        self.model.add(CuDNNLSTM(units=16, **CuDNN_LSTM_hypers))
+
         # self.model.add(CuDNNLSTM(units=16, **LSTM_hypers))
 
 
@@ -223,7 +227,7 @@ class Net:
         #     self.model.add(Dense(nodes, activation=activation))
         #     self.model.add(Dropout(self.dr))
 
-        self.model.add(Dense(self.nb_classes_, activation='softmax')) # 3 final nodes
+        self.model.add(Dense(self.nb_classes_, activation='softmax'))
 
 
     def compile(self, lr):
