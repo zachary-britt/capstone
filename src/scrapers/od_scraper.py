@@ -8,24 +8,33 @@ import threading, multiprocessing
 from queue import Queue
 import numpy as np
 from datetime import datetime as dt
+import dateutil.parser
 
 def meta_scrape_link(table, link):
     try:
         soup = souper(link, False)
-        art_list_soup = soup.find('ul', {'class':'articles-list'})
-        soup_heads = art_list_soup.find_all('h3', {'class':'hed'})
+        art_list_soup = soup.find('div', {'class':'small-12 medium-8 columns'})
+        cards = art_list_soup.find_all('article')
     except:
         print('page error')
         return
 
-    for soup_head in soup_heads:
+    for card in cards:
         try:
             doc = {}
-            a = soup_head.find('a')
+            h = card.find('h3', {'itemprop':'headline'})
+            a = h.find('a')
             doc['link'] = a['href']
-            doc['title'] = a.get_text().replace('\n','').replace('\t','').strip(' ')
-            doc['source'] = 'mj'
-
+            doc['title'] = a['title']
+            doc['source'] = 'od'
+            try:
+                datestring = card.find('time',{'class':'time'})['datetime']
+                date = str(dateutil.parser.parse(datestring).date())
+            except:
+                print('date_error')
+                date='None'
+            doc['date'] = date
+            print(doc['title'])
             table.insert_one(doc)
         except:
             print('card error')
@@ -33,19 +42,19 @@ def meta_scrape_link(table, link):
 
 def meta_scraper(table):
 
-    page_ns = np.arange(110)
-    links = ['http://www.motherjones.com/politics/page/{}/'.format(i) for i in page_ns]
+    page_ns = np.arange(359)
+    links = ['http://occupydemocrats.com/category/politics/page/{}/'.format(i) for i in page_ns]
+
+
 
     for link in links:
-        meta_scrape_link(table, link)
-        time.sleep(np.random.random()/3 +0.1)
-        print('scraped {}'.format(link))
+        thread = threading.Thread(target=meta_scrape_link, args=(table, link))
+        thread.start()
+        time.sleep(np.random.random()/3+0.1)
 
 
 def content_adder_thread(table, doc, i):
     link = doc['link']
-    # if 'date' in doc.keys():
-    #     return
 
     soup = souper(link, False)
     if soup == None:
@@ -56,7 +65,7 @@ def content_adder_thread(table, doc, i):
             print('request failed twice')
             return
     try:
-        entry = soup.find( 'article', {'class':"entry-content"})
+        entry=soup.find('div',{'class':'post-content entry-content cf'})
         children = list(entry.children)
         good_children = []
         good_tags = ['p', 'blockquote', 'ul']
@@ -69,21 +78,8 @@ def content_adder_thread(table, doc, i):
 
         content = '\n'.join([child.get_text() for child in good_children]).replace('\xa0',' ')
 
-        try:
-            date_soup = soup.find('span', {'class':'dateline'})
-            date_text = date_soup.get_text()
-            date=str(dt.strptime(date_text[:13], '%b. %d, %Y').date())
-        except:
-            try:
-                date_soup = soup.find('span', {'class':'dateline'})
-                date_text = date_soup.get_text()
-                date=str(dt.strptime(date_text[:12], '%b. %d, %Y').date())
-            except:
-                print('date_error')
-                date='None'
-
         _id = doc['_id']
-        table.update_one(filter={'_id':_id}, update={'$set':{'content':content, 'date':date}})
+        table.update_one(filter={'_id':_id}, update={'$set':{'content':content}})
         print('{} : {}'.format(i, content[:70]))
     except:
         print('{}: article error'.format(i))
@@ -93,16 +89,16 @@ def content_scraper(table):
 
     docs = table_to_list(table)
     for i,doc in enumerate(docs):
-        # if 'content' in doc.keys():
-        #     continue
+        if 'content' in doc.keys():
+            continue
         thread = threading.Thread(name=i, target=content_adder_thread, args=(table, doc, i))
         thread.start()
-        time.sleep(np.random.random()/3+0.1)
+        time.sleep(np.random.random()/3+0.3)
 
 
 
 
 if __name__ == '__main__':
-    table = open_database_collection('mj')
-    #meta_scraper(table)
+    table = open_database_collection('od')
+    # meta_scraper(table)
     content_scraper(table)

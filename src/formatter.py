@@ -237,6 +237,19 @@ def hp_clean(df):
     return df
 
 
+def mj_clean_text(text):
+    pass
+
+
+def mj_clean(df):
+    from formatter import mj_clean_text
+    pool = Pool(4)
+    df['content'] = pool.map(mj_clean_text, df['content'])
+    pool.close()
+    pool.join()
+    return df
+
+
 def reu_clean_text(text):
     '''
     sign in: 'WASHINGTON (Reuters) -

@@ -18,24 +18,25 @@ def fill_dates(df):
 
 
 def load_dfs():
+
+    #open mongo collectoins as pandas dataframes
     fox_df = st.open_as_df('fox')
     hp_df = st.open_as_df('hp')
     reu_df = st.open_as_df('reuters')
     mj_df = st.open_as_df('mj')
     bb_df = st.open_as_df('bb')
+    od_df = st.open_as_df('od')
     ads_df = st.open_as_df('ads')
 
     # match up df format
-
     ads_df=ads_df[ads_df['supports'].isin(('Hillary Clinton','Donald Trump'))]
     hp_df.drop('author', axis=1, inplace=True)
     mj_df = fill_dates(mj_df)
     hp_df['date']= hp_df.date.apply( lambda date: dt.strftime(date, '%Y-%m-%d'))
     reu_df['date']= reu_df.date.apply( lambda date: dt.strftime(date, '%Y-%m-%d'))
 
-
-
     # create bias metric, -1 = left, 0 = neutral, 1 = right
+    od_df['bias'] = -1
     mj_df['bias'] = -1
     hp_df['bias'] = -0.5
     reu_df['bias'] = 0
