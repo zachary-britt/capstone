@@ -1,16 +1,16 @@
-# capstone
+# text2slant
 
-Looking for bias in news articles.
+## Looking for bias in news articles via NLP.
 
 By reading in sentences from a news article into an RNN can we mathematically map the ideology of the article? The issue of bias in journalism has long been a hot button issue, but it has blown up in the Trump era with vitrolic attacks coming from the very top on political reporting.
 
 People can manually judge bias, but it inherantly involves subjective human assessment. People have also created maps of the biases of different news sources:
 
-https://i.imgur.com/kP4Yax1.png
+![](https://i.imgur.com/kP4Yax1.png "Partisan map")
 
 This process can be automated by mapping the web via twitter shares:
 
-https://thesocietypages.org/socimages/2017/09/28/the-different-media-spheres-of-the-right-and-the-left-and-how-theyre-throwing-elections-to-the-republicans/
+![](https://thesocietypages.org/socimages/files/2017/09/4.png "Twitter Partisan map")
 
 
 My goal is to tackle this by reading the text itself. For training data I used political news articles from Fox, the Huffington Post (HP), and Reuters over the past year. These were web scraped (see "src/scrapers/"). HP/Fox were chosen as they provide news coverage in a consistently partisan fashion for the left/right. While their journalistic styles differ, they conveniently mirror each other as partisan cheerleaders. As a neutral label I chose Reuters as they embody intensly unsentimental and unbiased news reporting.
@@ -25,6 +25,12 @@ As a quick example, right now (2017-11-21) HP, Fox and Reuters each have a headl
 
 <br>
 
+### Web-scraping
+
+<br>
+
+### Pre-processing
+
 First the text is pre-processed and obfuscated  by removing sentences which clearly identify the source of the article. 
 
 e.g.: 
@@ -34,6 +40,34 @@ e.g.:
 gets cut, along with other references to the news source. (replacing 'HuffPost' with 'this newspaper' and so on)
 
 <br>
+
+### spaCy NLP
+
+With the text obfuscated we move on to processing the text in the spaCy NLP ecosystem. Instead of relearning how to read from scratch
+
+<br>
+
+### Model training
+
+<br>
+
+### Model Performance on validation set
+
+<br>
+
+### Model Performance on articles from new sources
+
+<br>
+
+### Model next steps:
+
+Bin content by date and topic to leverage variance in reporting.  
+
+By scrambling the dates and topics we lose a huge amount of valuable information. Covering Clinton scandals in November 2017 is humongously different than covering a scandal of a frontrunning presidential nominee.
+
+<br>
+
+# Obsolete from here on
 
 Next the text is chunked and annotated with scpaCy.
 
