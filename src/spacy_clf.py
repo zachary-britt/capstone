@@ -8,13 +8,18 @@ from sklearn.model_selection import train_test_split
 from spacy.util import minibatch, compounding
 from pathlib import Path
 import ipdb
+import plac
+
+import os
+PROJ_PATH = os.environ['PROJ_PATH']
 
 def load_text():
-    df = pd.read_pickle('../data/formatted_arts.pkl')
+    df = pd.read_pickle()
 
     X = df.content.values
     y = df.bias.values
 
+    ''' dead code for class balancing, may revive '''
     # left_inds = np.argwhere( y == 'left' ).ravel()
     # right_inds = np.argwhere( y == 'right' ).ravel()
     # center_inds = np.argwhere( y == 'center' ).ravel()
@@ -69,23 +74,40 @@ def evaluate(tokenizer, textcat, texts, cats):
     return {'textcat_p': precision, 'textcat_r': recall, 'textcat_f': f_score}
 
 
-
-
-if __name__ == '__main__':
+def setup_nlp_with_text_cat(labels):
     nlp = spacy.load('en_core_web_lg')
     textcat = nlp.create_pipe('textcat')
     nlp.add_pipe(textcat, last=True)
-    textcat.add_label('left')
-    textcat.add_label('center')
-    textcat.add_label('right')
+    for label in labels:
+        textcat.add_label(label)
+    return nlp, textcat
 
-    #ipdb.set_trace()
+def main(   model_dir='/home/zachary/dsi/capstone/data/spacy_clf/',
+            overwrite_model=False,
+            df_dir='/home/zachary/dsi/capstone/data/formatted_arts.pkl'):
+
+    model_dir = Path(output_dir)
+    labels = ['left','center','right']
+
+    if not model_dir.exists():
+        model_dir.mkdir()
+        overwrite_model = True
+
+    if overwrite_model:
+        # create new model with text categorizer
+        nlp, textcat = setup_nlp_with_text_cat(labels)
+    else:
+        # resume training saved model
+        nlp = spacy.load(model_dir)
+        textcat = nlp.get_pipe('textcat')
+
+
 
     train_texts, test_texts, train_cats, test_cats = load_text()
 
     test_texts, val_texts, test_cats, val_cats = train_test_split(test_texts, test_cats, test_size=0.2)
 
-    n_samples = train_texts.shape[0]
+    n_samples = train_'/home/zachary/dsi/capstone/data/spacy_clf/texts.shape[0]
 
     n_iter = 2
 
@@ -134,7 +156,7 @@ if __name__ == '__main__':
     doc = nlp(test_text)
     print(test_text, doc.cats)
 
-    output_dir = '../data/spacy_clf/'
+    output_dir = '/home/zachary/dsi/capstone/data/spacy_clf/'
 
     if output_dir is not None:
         output_dir = Path(output_dir)
@@ -148,6 +170,10 @@ if __name__ == '__main__':
         nlp2 = spacy.load(output_dir)
         doc2 = nlp2(test_text)
         print(test_text, doc2.cats)
+
+if __name__ == '__main__':
+    plac.call(main)
+
 
 
 

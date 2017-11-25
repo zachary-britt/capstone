@@ -5,8 +5,9 @@ from sklearn.model_selection import train_test_split, cross_val_predict
 from pprint import pprint
 from sklearn.metrics import classification_report
 from sklearn.metrics.pairwise import cosine_similarity as cs
-
 import numpy as np
+import os
+PROJ_PATH = os.environ['PROJ_PATH']
 
 def make_vectorizer():
     vectorizer = Tfidf(stop_words='english', norm='l2', max_df = 0.7,

@@ -22,6 +22,8 @@ import ipdb
 
 from pprint import pprint
 
+PROJ_PATH = os.environ['PROJ_PATH']
+
 
 def get_data_files_list(index_range):
     data_dir = '/home/zachary/dsi/capstone/data/df_w_tensors/'

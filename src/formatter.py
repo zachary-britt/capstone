@@ -5,7 +5,9 @@ from multiprocessing import Pool
 import ipdb
 import re
 import string
-
+import plac
+import os
+PROJ_PATH = os.environ['PROJ_PATH']
 
 def universal_text_cleaner(text):
 
@@ -284,51 +286,46 @@ def find_leak(df, keyword):
         if i != -1:
             yield section
 
-def cull_shorts(df):
-    lens = np.array(df.content.apply(len))
-    inds = np.argwhere(lens > 200).ravel()
-    return df.iloc[inds]
+def cull_shorts(dfs):
+    for name in dfs:
+        df = dfs[name]
+        lens = np.array(df.content.apply(len))
+        inds = np.argwhere(lens > 500).ravel()
+        dfs[name] = df.iloc[inds]
 
-def loader_formatter():
+def main(out_loc=PROJ_PATH+'data/formatted_arts.pkl'):
     dfs = dl.load_dfs()
-    dfs = [universal_cleaner(df) for df in dfs]
-
-    fox_df, hp_df, reu_df = dfs
+    dfs = {name:universal_cleaner(dfs[name]) for name in dfs}
 
     fox_df = fox_clean(fox_df)
-    hp_df = hp_clean(hp_df)
-    reu_df = reu_clean(reu_df)
+    dfs['fox'] = fox_clean(dfs['fox'])
+    dfs['hp'] = hp_clean(dfs['hp'])
+    dfs['reu'] = hp_clean(dfs['reu'])
 
-    fox_df = cull_shorts(fox_df)
-    hp_df = cull_shorts(hp_df)
-    reu_df = cull_shorts(reu_df)
+    dfs = {name:universal_stripper(dfs[name]) for name in dfs}
 
-    dfs = [fox_df, hp_df, reu_df]
+    df = pd.concat( [df[name] for name in dfs] )
 
-    dfs = [universal_stripper(df) for df in dfs]
+    # X = np.hstack([ (lambda x: x.content.values)(df) for df in dfs ])
+    # D = np.hstack([ (lambda x: x.date.values)(df) for df in dfs ])
+    # y = np.hstack([ (lambda x: x.bias.values)(df) for df in dfs ])
 
-    X = np.hstack([ (lambda x: x.content.values)(df) for df in dfs ])
-    D = np.hstack([ (lambda x: x.date.values)(df) for df in dfs ])
-    y = np.hstack([ (lambda x: x.bias.values)(df) for df in dfs ])
-
-    n = X.shape[0]
-    inds = np.arange(n)
-
-    np.random.seed(4914)
-    np.random.shuffle(inds)
-
-    contents = X[inds]
-    dates = D[inds]
-    biases = y[inds]
-
-
-    df = pd.DataFrame({'content':contents, 'date':dates, 'bias':biases})
-    path = '/home/zachary/dsi/capstone/data/formatted_arts.pkl'
+    # n = X.shape[0]
+    # inds = np.arange(n)
+    #
+    # np.random.seed(4914)
+    # np.random.shuffle(inds)
+    #
+    # contents = X[inds]
+    # dates = D[inds]
+    # biases = y[inds]
+    #
+    #
+    # df = pd.DataFrame({'content':contents, 'date':dates, 'bias':biases})
     df.to_pickle(path)
-
 
     return df
 
 if __name__ == '__main__':
 
-    df = loader_formatter()
+    df = plac.call(main)

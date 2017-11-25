@@ -5,34 +5,48 @@ import pandas as pd
 import pickle
 from datetime import datetime as dt
 import ipdb
+import numpy as np
+import os
+PROJ_PATH = os.environ['PROJ_PATH']
+
+def fill_dates(df):
+    inds_missing = df[df.date=='None' ].index.values
+    for i in inds_missing:
+        df['date'].iloc[i] = df['date'].iloc[i-1]
+    return df
+
+
 
 def load_dfs():
     fox_df = st.open_as_df('fox')
     hp_df = st.open_as_df('hp')
     reu_df = st.open_as_df('reuters')
-    # nyt_df = st.open_as_df('nyt')
-    # ads_df = st.open_as_df('ads')
+    mj_df = st.open_as_df('mj')
+    bb_df = st.open_as_df('bb')
+    ads_df = st.open_as_df('ads')
 
-    #ipdb.set_trace()
+    ipdb.set_trace()
 
-    # ads_df=ads_df[ads_df['supports'].isin(('Hillary Clinton','Donald Trump'))]
-    # ads_df['source'] = ads_df['supports']
-    # ads_df.drop('supports', axis=1, inplace=True)
+    # match up df format
 
-    # fox_df['date'] = fox_df.date.apply( lambda date_str: dt.date(dt.strptime(date_str, '%Y-%m-%d')))
-    fox_df['bias'] = 'right'
-
+    ads_df=ads_df[ads_df['supports'].isin(('Hillary Clinton','Donald Trump'))]
     hp_df.drop('author', axis=1, inplace=True)
-    # hp_df['date'] = hp_df.date.apply( dt.date )
+    mj_df = fill_dates(mj_df)
     hp_df['date']= hp_df.date.apply( lambda date: dt.strftime(date, '%Y-%m-%d'))
-    hp_df['bias'] = 'left'
-
-    reu_df['bias'] = 'center'
-    # reu_df['date'] = reu_df.date.apply( dt.date )
     reu_df['date']= reu_df.date.apply( lambda date: dt.strftime(date, '%Y-%m-%d'))
 
-    #return fox_df, hp_df, reu_df, nyt_df, ads_df
-    return fox_df, hp_df, reu_df
+
+
+    # create bias metric, -1 = left, 0 = neutral, 1 = right
+    mj_df['bias'] = -1
+    hp_df['bias'] = -0.5
+    reu_df['bias'] = 0
+    fox_df['bias'] = 0.5
+    bb_df['bias'] = 1
+    ads_df['bias'] = np.where( ads_df.supports=='Donald Trump', 1, -1 )
+
+    dfs = {'fox':fox_df, 'hp':hp_df, 'reu':reu_df, 'mj':mj_df, 'bb':bb_df, 'ads':ads_df}
+    return dfs
 
 
 # def load_toy():
@@ -43,4 +57,4 @@ def load_dfs():
 
 
 if __name__ == '__main__':
-    fox_df, hp_df, reu_df = load_dfs()
+    dfs = load_dfs()

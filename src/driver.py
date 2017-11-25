@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 import baseline_model
+import os
+PROJ_PATH = os.environ['PROJ_PATH']
 
 if __name__ == '__main__':
 

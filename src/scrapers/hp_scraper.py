@@ -37,6 +37,7 @@ def get_links_from_page(page_link, table, link_set):
                 try:
                     table.insert_one(doc)
                     link_set.add(link)
+                    print(title)
                 except(DuplicateKeyError):
                     print('DuplicateKeyError')
             except:
@@ -45,19 +46,33 @@ def get_links_from_page(page_link, table, link_set):
         print('bummer that page didnt load!')
 
 
+
 def hp_meta_scraper(table):
-    pages = range(95,601)
-    base_link = 'https://www.huffingtonpost.com/topic/donald-trump?page='
+    from hp_scraper import get_links_from_page
+    pages = range(0,19)
+    base_link = 'https://www.huffingtonpost.com/topic/congress?page='
     page_links = [base_link + str(page) for page in pages]
 
     gen = table_grabber(table)
     link_set={ doc['link'] for doc in gen}
 
-    for page in page_links:
-        time.sleep(np.random.random())
-        get_links_from_page(page, table, link_set)
+    #arg_iter =
 
-        print(page[-3:])
+    # def mini_func(link):
+    #     get_links_from_page(link, table, link_set)
+
+
+
+    # pool = multiprocessing.Pool(4)
+    # pool.map(mini_func, page_links)
+    for page in page_links:
+        time.sleep(np.random.random() +0.5)
+        # get_links_from_page(page, table, link_set)
+
+        thread = threading.Thread(target=get_links_from_page, args=(page, table, link_set))
+        thread.start()
+
+        #print(page)
 
 
 
@@ -108,16 +123,15 @@ def concurrent_content_grabber(table, concurrent_threads):
     for i in range(concurrent_threads):
         thread = threading.Thread(name=i, target=hp_content_collector, args=(table, gen))
         thread.start()
-        time.sleep(0.1)
+        time.sleep(0.4)
 
 
 
 if __name__ == '__main__':
 
-    # min_date = '2016-11-01'
     # max_date = '2017-11-01'
 
-    table = open_database_collection('articles_hp')
+    table = open_database_collection('hp')
     #hp_meta_scraper(table)
     #hp_content_collector(table)
     concurrent_content_grabber(table, concurrent_threads=10)

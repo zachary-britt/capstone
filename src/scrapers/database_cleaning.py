@@ -3,11 +3,12 @@ import ipdb
 from collections import Counter
 from pymongo import MongoClient
 import pickle
+import plac
 
 def remove_dups(table):
-    ipdb.set_trace()
-    gen = st.table_grabber(table)
-    docs = list(gen)
+    #ipdb.set_trace()
+    docs = st.table_to_list(table)
+
     # urls = [ doc['link'] for doc in docs]
     # _ids = [ doc['_id'] for doc in docs]
 
@@ -31,6 +32,10 @@ def table_to_list(table):
     return list(gen)
 
 
-if __name__ == '__main__':
-    table = st.open_database_collection('reuters')
+def main(t_name):
+    table = st.open_database_collection(t_name)
     remove_dups(table)
+
+
+if __name__ == '__main__':
+    plac.call(main)
