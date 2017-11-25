@@ -1,13 +1,13 @@
-import sys
-sys.path.insert(0, '/home/zachary/dsi/capstone/src/scrapers')
+import sys, os
+PROJ_PATH = os.environ['PROJ_PATH']
+DATA_PATH = os.environ['DATA_PATH']
+sys.path.insert(0, PROJ_PATH+'/src/scrapers')
 import scrape_tools as st
 import pandas as pd
 import pickle
 from datetime import datetime as dt
 import ipdb
 import numpy as np
-import os
-PROJ_PATH = os.environ['PROJ_PATH']
 
 def fill_dates(df):
     inds_missing = df[df.date=='None' ].index.values
@@ -35,16 +35,19 @@ def load_dfs():
     hp_df['date']= hp_df.date.apply( lambda date: dt.strftime(date, '%Y-%m-%d'))
     reu_df['date']= reu_df.date.apply( lambda date: dt.strftime(date, '%Y-%m-%d'))
 
-    # create bias metric, -1 = left, 0 = neutral, 1 = right
-    od_df['bias'] = -1
-    mj_df['bias'] = -1
-    hp_df['bias'] = -0.5
-    reu_df['bias'] = 0
-    fox_df['bias'] = 0.5
-    bb_df['bias'] = 1
+    # create bias metric, -1 = left, 0 = center, 1 = right
+    od_df['bias'] = -1;     od_df['orient'] = 'left';
+    mj_df['bias'] = -1;     mj_df['orient'] = 'left';
+    hp_df['bias'] = -0.5;   hp_df['orient'] = 'left'
+    reu_df['bias'] = 0;     reu_df['orient']= 'center'
+    fox_df['bias'] = 0.5;   fox_df['orient']= 'right'
+    bb_df['bias'] = 1;      bb_df['orient'] = 'right'
     ads_df['bias'] = np.where( ads_df.supports=='Donald Trump', 1, -1 )
+    ads_df['orient'] = np.where( ads_df.supports=='Donald Trump', 'right', 'left' )
 
-    dfs = {'fox':fox_df, 'hp':hp_df, 'reu':reu_df, 'mj':mj_df, 'ads':ads_df} #'bb':bb_df
+
+    dfs = {'fox':fox_df, 'hp':hp_df, 'reu':reu_df, 'mj':mj_df, 'ads':ads_df,
+            'bb':bb_df, 'od':od_df}
 
     drops = ['author','source','supports']
     for name in dfs:

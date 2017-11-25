@@ -15,7 +15,6 @@ def make_vectorizer():
     return vectorizer
 
 def tfidf_NB_baseline(X, y):
-    #X_t, X_e, y_t, y_e = train_test_split(X, y, test_size = 0.2)
 
     vectorizer = make_vectorizer()
     model = MNB()
