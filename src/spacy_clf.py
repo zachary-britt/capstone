@@ -10,9 +10,6 @@ from pathlib import Path
 import ipdb
 import plac
 
-import os
-PROJ_PATH = os.environ['PROJ_PATH']
-
 def load_text():
     df = pd.read_pickle()
 
@@ -43,6 +40,8 @@ def load_text():
     y = [{'left': bias=='left', 'center': bias=='center', 'right': bias=='right'} for bias in y]
 
     # y = np.array([{'left': bias=='left'} for bias in y])
+
+
 
     return train_test_split(X,y, test_size=0.2)
 
@@ -107,7 +106,7 @@ def main(   model_dir='/home/zachary/dsi/capstone/data/spacy_clf/',
 
     test_texts, val_texts, test_cats, val_cats = train_test_split(test_texts, test_cats, test_size=0.2)
 
-    n_samples = train_'/home/zachary/dsi/capstone/data/spacy_clf/texts.shape[0]
+    n_samples = train_texts.shape[0]
 
     n_iter = 2
 

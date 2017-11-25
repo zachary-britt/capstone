@@ -20,24 +20,24 @@ def open_database_collection(name):
     return table
 
 
-def process_cursor(cursor):
-    target_table = open_database_collection('political_reddit_2')
-
-    fil =   {'$and':[
-                {'subreddit': {'$in': ['hillaryclinton', 'politics','progressive', 'The_Donald', 'Conservative','Republican']}},
-                {'score': {'$gte': 10} }
-            ]}
-    proj =  {
-            'body': 1,
-            'subreddit': 1,
-            'author': 1,
-            'score': 1,
-            'created_utc': 1
-            }
-
-
-
-    pass
+# def process_cursor(cursor):
+#     target_table = open_database_collection('political_reddit_2')
+#
+#     fil =   {'$and':[
+#                 {'subreddit': {'$in': ['hillaryclinton', 'politics','progressive', 'The_Donald', 'Conservative','Republican']}},
+#                 {'score': {'$gte': 10} }
+#             ]}
+#     proj =  {
+#             'body': 1,
+#             'subreddit': 1,
+#             'author': 1,
+#             'score': 1,
+#             'created_utc': 1
+#             }
+#
+#
+#
+#     pass
 
 if __name__ == '__main__':
 
@@ -78,14 +78,57 @@ if __name__ == '__main__':
     # pool.close()
     # pool.join()
 
-    # 'hillaryclinton', 'politics','progressive',
+    #
 
     '''
+    # neutral noise subreddits:
+    # {subreddit: {$in: ['nfl','nhl','nba','baseball', 'soccer','hockey','Fitness'
+                        'WritingPrompts','philosophy','askscience','gaming']}}
+    # stories= {subreddit: {$in: []}}
+
 
     var fil =
     {
         $and:[
-                    {subreddit: {$in: [ 'The_Donald', 'Conservative','Republican']}},
+                    {subreddit: {$in: ['nfl','nhl','nba','baseball','soccer','hockey','Fitness','WritingPrompts','philosophy','askscience','gaming']}},
+                    {score: {$gte: 10}},
+                    {$where: "this.body.length > 500"}]
+    }
+
+    var bulkInsert = db.neutral_reddit.initializeUnorderedBulkOp()
+    var x = 10000
+    var counter = 0
+
+    var proj =
+    {
+        body: 1,
+        subreddit: 1,
+        author: 1,
+        score: 1,
+        created_utc: 1
+    }
+
+    db.reddit.find(fil, proj).forEach(
+        function(doc){
+            bulkInsert.insert(doc);
+            counter ++
+            if( counter % x == 0){
+                bulkInsert.execute()
+                bulkInsert = db.neutral_reddit.initializeUnorderedBulkOp()
+          }
+        }
+      )
+    bulkInsert.execute()
+
+
+    '''
+
+    '''
+    #political_reddit
+    var fil =
+    {
+        $and:[
+                    {subreddit: {$in: ['hillaryclinton','politics','progressive','The_Donald', 'Conservative','Republican']}},
                     {score: {$gte: 10} }
              ]
     }
@@ -114,6 +157,116 @@ if __name__ == '__main__':
         }
       )
     bulkInsert.execute()
+
+
+
+
+    #left_reddit
+    var fil =
+    {
+        $and:[
+                    {subreddit: {$in: ['hillaryclinton','politics','progressive']}},
+                    {score: {$gte: 10} },
+                    {$where: "this.body.length > 500"}
+             ]
+    }
+
+    var bulkInsert = db.left_reddit.initializeUnorderedBulkOp()
+    var x = 1000
+    var counter = 0
+
+    var proj =
+    {
+        body: 1,
+        subreddit: 1,
+        author: 1,
+        score: 1,
+        created_utc: 1
+    }
+
+    db.political_reddit.find(fil, proj).forEach(
+        function(doc){
+            bulkInsert.insert(doc);
+            counter ++
+            if( counter % x == 0){
+                bulkInsert.execute()
+                bulkInsert = db.left_reddit.initializeUnorderedBulkOp()
+          }
+        }
+      )
+    bulkInsert.execute()
+
+
+
+    #right_reddit
+    var fil =
+    {
+        $and:[
+                    {subreddit: {$in: ['The_Donald', 'Conservative','Republican']}},
+                    {score: {$gte: 10} },
+                    {$where: "this.body.length > 500"}
+             ]
+    }
+
+    var bulkInsert = db.right_reddit.initializeUnorderedBulkOp()
+    var x = 1000
+    var counter = 0
+
+    var proj =
+    {
+        body: 1,
+        subreddit: 1,
+        author: 1,
+        score: 1,
+        created_utc: 1
+    }
+
+    db.political_reddit.find(fil, proj).forEach(
+        function(doc){
+            bulkInsert.insert(doc);
+            counter ++
+            if( counter % x == 0){
+                bulkInsert.execute()
+                bulkInsert = db.right_reddit.initializeUnorderedBulkOp()
+          }
+        }
+      )
+    bulkInsert.execute()
+
+
+
+
+#trim left and right
+
+var fil = { score: {$lt: 50} }
+db.right_reddit.deleteMany(fil)
+
+
+
+var bulkInsert = db.right_reddit.initializeUnorderedBulkOp()
+var x = 1000
+var counter = 0
+
+var proj =
+{
+    body: 1,
+    subreddit: 1,
+    author: 1,
+    score: 1,
+    created_utc: 1
+}
+
+db.political_reddit.find(fil, proj).forEach(
+    function(doc){
+        bulkInsert.insert(doc);
+        counter ++
+        if( counter % x == 0){
+            bulkInsert.execute()
+            bulkInsert = db.right_reddit.initializeUnorderedBulkOp()
+      }
+    }
+  )
+bulkInsert.execute()
 
 
 

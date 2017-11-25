@@ -57,6 +57,25 @@ def load_dfs():
     return dfs
 
 
+def load_reddit():
+    from dateutil import tz
+
+    left_df = st.open_as_df('left_reddit')
+    right_df = st.open_as_df('right_reddit')
+    neutral_df = st.open_as_df('neutral_reddit')
+
+
+    left_df['bias'] = -1;   left_df['orient'] = 'left'
+    right_df['bias']= 1;    right_df['orient'] = 'right'
+    neutral_df['bias']=0;   neutral_df['orient']='center'
+
+    df = pd.concat([left_df,right_df], ignore_axis=True)
+    drops = ['author','score','subreddit']
+    df.drop(drops, axis=1, inplace=True)
+    df.rename(columns={'body':'content','created_utc':'date'})
+
+    return df
+
 # def load_toy():
 #     import pickle
 #     with open('../data/toy_data.pkl','rb') as f:

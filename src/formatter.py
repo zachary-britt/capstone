@@ -410,8 +410,9 @@ def cull_shorts(dfs):
     return dfs
 
 
-def main(out_loc=DATA_PATH+'formatted_arts.pkl'):
+def main(out_dir=DATA_PATH+):
 
+    ''' Article Dfs'''
     dfs = dl.load_dfs()
     dfs = {name:universal_cleaner(dfs[name]) for name in dfs}
 
@@ -428,9 +429,16 @@ def main(out_loc=DATA_PATH+'formatted_arts.pkl'):
 
     df = pd.concat( list(dfs.values()), ignore_index=True )
 
-    df.to_pickle(out_loc)
+    df.to_pickle(out_dir+'formatted_arts.pkl')
 
-    return df
+    '''Reddit dfs'''
+    rdf = df.load_reddit()
+    rdf = universal_cleaner(rdf)
+    rdf = universal_stripper(rdf)
+    rdf.to_pickle
+    rdf.to_pickle(out_dir+'formatted_red.pkl')
+
+    return df, rdf
 
 if __name__ == '__main__':
     plac.call(main)
