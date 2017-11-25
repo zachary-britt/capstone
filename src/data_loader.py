@@ -25,8 +25,6 @@ def load_dfs():
     bb_df = st.open_as_df('bb')
     ads_df = st.open_as_df('ads')
 
-    ipdb.set_trace()
-
     # match up df format
 
     ads_df=ads_df[ads_df['supports'].isin(('Hillary Clinton','Donald Trump'))]
@@ -45,7 +43,13 @@ def load_dfs():
     bb_df['bias'] = 1
     ads_df['bias'] = np.where( ads_df.supports=='Donald Trump', 1, -1 )
 
-    dfs = {'fox':fox_df, 'hp':hp_df, 'reu':reu_df, 'mj':mj_df, 'bb':bb_df, 'ads':ads_df}
+    dfs = {'fox':fox_df, 'hp':hp_df, 'reu':reu_df, 'mj':mj_df, 'ads':ads_df} #'bb':bb_df
+
+    drops = ['author','source','supports']
+    for name in dfs:
+        for col in drops:
+            try: dfs[name].drop(col, axis=1, inplace=True)
+            except: pass
     return dfs
 
 

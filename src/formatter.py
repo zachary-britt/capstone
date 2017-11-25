@@ -85,6 +85,7 @@ def universal_stripper(df):
     pool.join()
     return df
 
+
 def kill_from_(text, keyword, startword):
     i = text.find(keyword)
     if i != -1:
@@ -159,6 +160,7 @@ def fox_clean_text(text):
 
     return text
 
+
 def fox_clean(df):
     from formatter import fox_clean_text
     pool = Pool(4)
@@ -166,6 +168,7 @@ def fox_clean(df):
     pool.close()
     pool.join()
     return df
+
 
 def hp_clean_text(text):
     '''
@@ -224,6 +227,7 @@ def hp_clean_text(text):
 
     return text
 
+
 def hp_clean(df):
 
     from formatter import hp_clean_text
@@ -231,6 +235,7 @@ def hp_clean(df):
     # df['content'] = pool.map(hp_clean_text, df['content'])
     df['content'] = list(map(hp_clean_text, df['content']))
     return df
+
 
 def reu_clean_text(text):
     '''
@@ -272,6 +277,7 @@ def reu_clean_text(text):
     text = text.replace('Reuters', 'this newspaper')
     return text
 
+
 def reu_clean(df):
     from formatter import reu_clean_text
     pool = Pool(4)
@@ -286,6 +292,7 @@ def find_leak(df, keyword):
         if i != -1:
             yield section
 
+
 def cull_shorts(dfs):
     for name in dfs:
         df = dfs[name]
@@ -293,39 +300,23 @@ def cull_shorts(dfs):
         inds = np.argwhere(lens > 500).ravel()
         dfs[name] = df.iloc[inds]
 
+
 def main(out_loc=PROJ_PATH+'data/formatted_arts.pkl'):
+
     dfs = dl.load_dfs()
     dfs = {name:universal_cleaner(dfs[name]) for name in dfs}
 
-    fox_df = fox_clean(fox_df)
     dfs['fox'] = fox_clean(dfs['fox'])
     dfs['hp'] = hp_clean(dfs['hp'])
     dfs['reu'] = hp_clean(dfs['reu'])
 
     dfs = {name:universal_stripper(dfs[name]) for name in dfs}
 
-    df = pd.concat( [df[name] for name in dfs] )
+    df = pd.concat( list(dfs.values()), ignore_index=True )
 
-    # X = np.hstack([ (lambda x: x.content.values)(df) for df in dfs ])
-    # D = np.hstack([ (lambda x: x.date.values)(df) for df in dfs ])
-    # y = np.hstack([ (lambda x: x.bias.values)(df) for df in dfs ])
-
-    # n = X.shape[0]
-    # inds = np.arange(n)
-    #
-    # np.random.seed(4914)
-    # np.random.shuffle(inds)
-    #
-    # contents = X[inds]
-    # dates = D[inds]
-    # biases = y[inds]
-    #
-    #
-    # df = pd.DataFrame({'content':contents, 'date':dates, 'bias':biases})
-    df.to_pickle(path)
+    df.to_pickle(out_loc)
 
     return df
 
 if __name__ == '__main__':
-
-    df = plac.call(main)
+    plac.call(main)
