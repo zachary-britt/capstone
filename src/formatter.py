@@ -435,7 +435,7 @@ def main(out_dir=DATA_PATH):
 
     df = pd.concat( list(dfs.values()), ignore_index=True )
 
-    df.to_pickle(out_dir+'formatted_arts.pkl')
+    df.to_pickle(out_dir+'articles.pkl')
 
     '''Reddit dfs'''
     rdf = dl.load_reddit()
@@ -443,7 +443,12 @@ def main(out_dir=DATA_PATH):
     rdf = universal_stripper(rdf)
     rdf = cull_shorts(rdf)  # cull comments shorter than 400 after stripping
     rdf.to_pickle
-    rdf.to_pickle(out_dir+'formatted_red.pkl')
+    rdf.to_pickle(out_dir+'reddit.pkl')
+
+
+    ''' Holdout Dfs'''
+
+    
 
     return df, rdf
 

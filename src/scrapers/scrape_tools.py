@@ -1,6 +1,5 @@
 import requests, os, ipdb
 from pymongo import MongoClient
-# from pymongo.errors import DuplicateKeyError, CollectionInvalid
 import urllib.parse
 from bs4 import BeautifulSoup
 import time

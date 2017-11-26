@@ -3,10 +3,59 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from pprint import pprint
 from collections import Counter
+
+from pymongo import MongoClient
+import urllib.parse
+
 from pathlib import Path
 import os
 DATA_PATH = os.environ['DATA_PATH']
 
+
+
+'''MONGO UTILS'''
+
+def open_mongo_client():
+    username = urllib.parse.quote_plus('admin')
+    password = urllib.parse.quote_plus('admin123')
+    client = MongoClient('mongodb://%s:%s@127.0.0.1' % (username, password))
+    return client
+
+
+def open_database_collection(collection_name):
+    client = open_mongo_client()
+    db = client['articles']
+    table = db[collection_name]
+    return table
+
+
+def table_grabber(table, field=None):
+    '''
+    Create a generator over the mongo table which returns the document _id and
+    the requested field
+    '''
+    if field:
+        cur = table.find(projection={field:True})
+    else:
+        cur = table.find()
+    while cur.alive:
+        yield cur.next()
+
+
+def table_to_list(table):
+    gen = table_grabber(table)
+    return list(gen)
+
+
+def open_as_df(collection_name):
+    table = open_database_collection(collection_name)
+    t_list = table_to_list(table)
+    df = pd.DataFrame(t_list)
+    return df
+
+
+
+'''DATA LOADING UTILS'''
 
 def make_cat_dict(y, labels):
     y = [{label:value == label for label in labels} for value in y]
@@ -16,7 +65,6 @@ def make_cat_dict(y, labels):
 def make_one_hot(y, labels):
     hot_cols = [ np.where(y==label, 1, 0).reshape(-1,1) for label in labels ]
     return hstack(hot_cols)
-
 
 
 def tt_split_df(df, test_size, tag_loc, new_tags):

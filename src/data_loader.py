@@ -1,13 +1,12 @@
 import sys, os
-PROJ_PATH = os.environ['PROJ_PATH']
 DATA_PATH = os.environ['DATA_PATH']
-sys.path.insert(0, PROJ_PATH+'/src/scrapers')
-import scrape_tools as st
+import zutils
 import pandas as pd
 import pickle
 from datetime import datetime as dt
 import ipdb
 import numpy as np
+
 
 def fill_dates(df):
     inds_missing = df[df.date=='None' ].index.values
@@ -16,17 +15,16 @@ def fill_dates(df):
     return df
 
 
-
 def load_dfs():
 
     #open mongo collectoins as pandas dataframes
-    fox_df = st.open_as_df('fox')
-    hp_df = st.open_as_df('hp')
-    reu_df = st.open_as_df('reuters')
-    mj_df = st.open_as_df('mj')
-    bb_df = st.open_as_df('bb')
-    od_df = st.open_as_df('od')
-    ads_df = st.open_as_df('ads')
+    fox_df = zutils.open_as_df('fox')
+    hp_df = zutils.open_as_df('hp')
+    reu_df = zutils.open_as_df('reuters')
+    mj_df = zutils.open_as_df('mj')
+    bb_df = zutils.open_as_df('bb')
+    od_df = zutils.open_as_df('od')
+    ads_df = zutils.open_as_df('ads')
 
     # match up df format
     ads_df=ads_df[ads_df['supports'].isin(('Hillary Clinton','Donald Trump'))]
@@ -75,12 +73,6 @@ def load_reddit():
     df.rename(columns={'body':'content','created_utc':'date'}, inplace=True)
 
     return df
-
-# def load_toy():
-#     import pickle
-#     with open('../data/toy_data.pkl','rb') as f:
-#         data_tup = pickle.load(f)
-#     return data_tup
 
 
 if __name__ == '__main__':
