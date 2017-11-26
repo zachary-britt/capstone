@@ -1,0 +1,15 @@
+#!/bin/bash
+source ~/.bashrc
+
+model_loc_1=${DATA_PATH}spacy_clf
+model_loc_2=${DATA_PATH}spacy_clf_w_reddit
+model_loc_3=${DATA_PATH}spacy_clf_w_reddit_and_polish
+
+train_art_loc=${DATA_PATH}formatted_arts
+train_red_loc=${DATA_PATH}formatted_red
+holdout_loc=${DATA_PATH}formatted_holdout
+
+echo $data_loc
+python spacy_textcat.py
+
+#

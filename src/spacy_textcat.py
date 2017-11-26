@@ -36,6 +36,9 @@ class Model:
             self.nlp = spacy.load(self.model_dir)
             self.textcat = self.nlp.get_pipe('textcat')
 
+        other_pipes = [pipe for pipe in self.nlp.pipe_names if pipe != 'textcat']
+        self.nlp.disable_pipes(*other_pipes)  # only train textcat
+
 
     def load_and_configure_training_data(self, data_loc):
         df = pd.read_pickle(data_loc)
@@ -67,72 +70,63 @@ class Model:
         return train_data, valid_data, evali_data
 
     def fit(self, data_loc, n_iter):
-
-
-
         train_data, valid_data, evali_data = self.load_and_configure_training_data(data_loc)
+        self.optimizer = self.nlp.begin_training(n_workers = -1)
+        print("Training the model...")
+        print('{:^5}\t{:^5}\t{:^5}\t{:^5}'.format('LOSS', 'P', 'R', 'F'))
+        seen = 0
+        for i in range(n_iter):
+            losses = {}
+            # batch up the examples using spaCy's minibatch
+            batches = minibatch(train_data, size=compounding(4., 64., 1.01))
+            for j,batch in enumerate(batches):
+                texts, annotations = zip(*batch)
 
-        other_pipes = [pipe for pipe in self.nlp.pipe_names if pipe != 'textcat']
-        with self.nlp.disable_pipes(*other_pipes):  # only train textcat
-            optimizer = self.nlp.begin_training(n_workers = -1)
-            print("Training the model...")
-            print('{:^5}\t{:^5}\t{:^5}\t{:^5}'.format('LOSS', 'P', 'R', 'F'))
-            seen = 0
-            for i in range(n_iter):
-                losses = {}
-                # batch up the examples using spaCy's minibatch
-                batches = minibatch(train_data, size=compounding(4., 64., 1.01))
-                for j,batch in enumerate(batches):
-                    texts, annotations = zip(*batch)
+                self.nlp.update(texts, annotations, sgd=self.optimizer, drop=0.2,
+                        losses=losses)
 
-                    self.nlp.update(texts, annotations, sgd=optimizer, drop=0.2,
-                            losses=losses)
-
-                    ''' in process validation so there's something to watch '''
-                    seen += len(texts)
-                    if seen > 5000:
-                        seen = 0
-                        with self.textcat.model.use_params(optimizer.averages):
-                            # validate
-                            scores = self.evaluate(valid_data)
-                            print('{0:.3f}\t{1:.3f}\t{2:.3f}\t{3:.3f}'
-                                .format(losses['textcat'], scores['textcat_p'],
-                                scores['textcat_r'], scores['textcat_f']))
-
-                # end of epoch report
-                with self.textcat.model.use_params(optimizer.averages):
-                    # evaluate on the evaluation data
-                    scores = self.evaluate(evali_data)
+                ''' in process validation so there's something to watch '''
+                seen += len(texts)
+                if seen > 5000:
+                    seen = 0
+                    scores = self.evaluate(valid_data)
                     print('{0:.3f}\t{1:.3f}\t{2:.3f}\t{3:.3f}'
                         .format(losses['textcat'], scores['textcat_p'],
                         scores['textcat_r'], scores['textcat_f']))
 
+            # end of epoch report
+            scores = self.evaluate(evali_data)
+            print('{0:.3f}\t{1:.3f}\t{2:.3f}\t{3:.3f}'
+                .format(losses['textcat'], scores['textcat_p'],
+                scores['textcat_r'], scores['textcat_f']))
+
 
     def evaluate(self, annotated_data):
-        #ipdb.set_trace()
-        texts, cat_dicts = zip(*annotated_data)
-        docs = (self.nlp.tokenizer(text) for text in texts)
-        tp = 1e-8  # True positives
-        fp = 1e-8  # False positives
-        fn = 1e-8  # False negatives
-        tn = 1e-8  # True negatives
-        for i, doc in enumerate(self.textcat.pipe(docs)):
-            gold = cat_dicts[i]['cats']
-            for label, score in doc.cats.items():
-                if label not in gold:
-                    continue
-                if score >= 0.5 and gold[label] >= 0.5:
-                    tp += 1.
-                elif score >= 0.5 and gold[label] < 0.5:
-                    fp += 1.
-                elif score < 0.5 and gold[label] < 0.5:
-                    tn += 1
-                elif score < 0.5 and gold[label] >= 0.5:
-                    fn += 1
-        precision = tp / (tp + fp)
-        recall = tp / (tp + fn)
-        f_score = 2 * (precision * recall) / (precision + recall)
-        return {'textcat_p': precision, 'textcat_r': recall, 'textcat_f': f_score}
+        with self.textcat.model.use_params(self.optimizer.averages):
+            #ipdb.set_trace()
+            texts, cat_dicts = zip(*annotated_data)
+            docs = (self.nlp.tokenizer(text) for text in texts)
+            tp = 1e-8  # True positives
+            fp = 1e-8  # False positives
+            fn = 1e-8  # False negatives
+            tn = 1e-8  # True negatives
+            for i, doc in enumerate(self.textcat.pipe(docs)):
+                gold = cat_dicts[i]['cats']
+                for label, score in doc.cats.items():
+                    if label not in gold:
+                        continue
+                    if score >= 0.5 and gold[label] >= 0.5:
+                        tp += 1.
+                    elif score >= 0.5 and gold[label] < 0.5:
+                        fp += 1.
+                    elif score < 0.5 and gold[label] < 0.5:
+                        tn += 1
+                    elif score < 0.5 and gold[label] >= 0.5:
+                        fn += 1
+            precision = tp / (tp + fp)
+            recall = tp / (tp + fn)
+            f_score = 2 * (precision * recall) / (precision + recall)
+            return {'textcat_p': precision, 'textcat_r': recall, 'textcat_f': f_score}
 
 
     def save(self, output_dir=None):
@@ -147,17 +141,19 @@ class Model:
         print("Saved model to", output_dir)
 
 @plac.annotations(
-    data_loc=("Location dataframe"),
-    model_loc=("Where to store model"),
+    data_loc=("Location dataframe", "option", 'd'),
+    model_loc=("Where to find the model", "option", 'm'),
+    out_loc=("where to save the model", 'option', 'o'),
     overwrite_model=("Overwrite model found in model_loc", "flag", "w")
 )
 def main(   data_loc=DATA_PATH+'formatted_arts.pkl',
             model_loc=DATA_PATH+'spacy_clf',
+            out_loc=DATA_PATH+'spacy_clf_w_reddit',
             overwrite_model=False):
 
     model = Model(model_loc, overwrite_model)
     model.fit(data_loc, n_iter=1)
-    model.save()
+    model.save(out_loc)
 
 
 

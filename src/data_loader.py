@@ -69,10 +69,10 @@ def load_reddit():
     right_df['bias']= 1;    right_df['orient'] = 'right'
     neutral_df['bias']=0;   neutral_df['orient']='center'
 
-    df = pd.concat([left_df,right_df], ignore_axis=True)
+    df = pd.concat([left_df,neutral_df,right_df], ignore_index=True)
     drops = ['author','score','subreddit']
     df.drop(drops, axis=1, inplace=True)
-    df.rename(columns={'body':'content','created_utc':'date'})
+    df.rename(columns={'body':'content','created_utc':'date'}, inplace=True)
 
     return df
 

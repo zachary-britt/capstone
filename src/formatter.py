@@ -9,6 +9,8 @@ import plac
 import os
 DATA_PATH = os.environ['DATA_PATH']
 
+
+
 def universal_text_cleaner(text):
 
     replacements =  \
@@ -19,8 +21,13 @@ def universal_text_cleaner(text):
             "'": '’',
             '`': '’',
             ' "': " “",     # open quote
-            '" ': "” "      # close quote
+            '" ': "” ",      # close quote
+            '&gt;':'' ,     # using > in stories is a 4chan thing
+            '&lt;':''
         }
+
+    #strip links
+    text = re.sub(r'http\S+', '', text)
 
     for k in replacements:
         text = text.replace(k, replacements[k])
@@ -401,16 +408,15 @@ def find_leak(df, keyword):
             yield section
 
 
-def cull_shorts(dfs):
-    for name in dfs:
-        df = dfs[name]
-        lens = np.array(df.content.apply(len))
-        inds = np.argwhere(lens > 500).ravel()
-        dfs[name] = df.iloc[inds]
-    return dfs
+def cull_shorts(df):
+    lens = np.array(df.content.apply(len))
+    inds = np.argwhere(lens > 400).ravel()
+    df = df.iloc[inds]
+    df.reset_index(inplace=True)
+    return df
 
 
-def main(out_dir=DATA_PATH+):
+def main(out_dir=DATA_PATH):
 
     ''' Article Dfs'''
     dfs = dl.load_dfs()
@@ -425,16 +431,17 @@ def main(out_dir=DATA_PATH+):
     dfs['od'] = od_clean(dfs['od'])
 
     dfs = {name:universal_stripper(dfs[name]) for name in dfs}
-    dfs = cull_shorts(dfs)
+    dfs = {name:cull_shorts(dfs[name]) for name in dfs}
 
     df = pd.concat( list(dfs.values()), ignore_index=True )
 
     df.to_pickle(out_dir+'formatted_arts.pkl')
 
     '''Reddit dfs'''
-    rdf = df.load_reddit()
+    rdf = dl.load_reddit()
     rdf = universal_cleaner(rdf)
     rdf = universal_stripper(rdf)
+    rdf = cull_shorts(rdf)  # cull comments shorter than 400 after stripping
     rdf.to_pickle
     rdf.to_pickle(out_dir+'formatted_red.pkl')
 
