@@ -14,17 +14,17 @@ from sklearn.model_selection import train_test_split
 
 class Model:
 
-    def __init__(self, model_dir, overwrite_model=False):
+    def __init__(self, model_dir, reset_model=False):
         self.model_dir = Path(model_dir)
         self.labels = ['left','right']
-        self.open_nlp_with_text_cat_(overwrite_model)
+        self.open_nlp_with_text_cat_(reset_model)
 
 
-    def open_nlp_with_text_cat_(self, overwrite_model):
+    def open_nlp_with_text_cat_(self, reset_model):
         if not self.model_dir.exists():
             self.model_dir.mkdir()
-            overwrite_model = True
-        if overwrite_model:
+            reset_model = True
+        if reset_model:
             print('Loading fresh nlp from en_core_web_lg')
             self.nlp = spacy.load('en_core_web_lg')
             self.textcat = self.nlp.create_pipe('textcat')
@@ -144,14 +144,14 @@ class Model:
     data_loc=("Location dataframe", "option", 'd'),
     model_loc=("Where to find the model", "option", 'm'),
     out_loc=("where to save the model", 'option', 'o'),
-    overwrite_model=("Overwrite model found in model_loc", "flag", "w")
+    reset_model=("Reset model found in model_loc", "flag", "r")
 )
 def main(   data_loc=DATA_PATH+'formatted_arts.pkl',
             model_loc=DATA_PATH+'spacy_clf',
-            out_loc=DATA_PATH+'spacy_clf_w_reddit',
-            overwrite_model=False):
+            out_loc=DATA_PATH+'spacy_clf',
+            reset_model=False):
 
-    model = Model(model_loc, overwrite_model)
+    model = Model(model_loc, reset_model)
     model.fit(data_loc, n_iter=1)
     model.save(out_loc)
 

@@ -6,12 +6,13 @@ from pprint import pprint
 from sklearn.metrics import classification_report
 from sklearn.metrics.pairwise import cosine_similarity as cs
 import numpy as np
+import plac
 import os
-PROJ_PATH = os.environ['PROJ_PATH']
+DATA_PATH = os.environ['DATA_PATH']
 
 def make_vectorizer():
-    vectorizer = Tfidf(stop_words='english', norm='l2', max_df = 0.7,
-            max_features = 12000, sublinear_tf=True)
+    vectorizer = Tfidf(stop_words='english', norm='l2', max_df=0.7,
+                        max_features=12000, sublinear_tf=True)
     return vectorizer
 
 def tfidf_NB_baseline(X, y):
@@ -22,7 +23,6 @@ def tfidf_NB_baseline(X, y):
 
     y_p = cross_val_predict( clf, X, y, cv=3, n_jobs=4 )
     pprint( classification_report(y, y_p) )
-
 
 
 def cos_sim(X, y):
@@ -69,3 +69,15 @@ def cos_sim(X, y):
     print('fox and hp : {}'.format(fox_hp_sim_score))
     print('fox and reu : {}'.format(fox_reu_sim_score))
     print('hp and reu : {}'.format(hp_reu_sim_score))
+
+
+def main(   train_data_loc=DATA_PATH+'formatted_arts.pkl',
+            test_data_loc=DATA_PATH+'formatted_test_arts.pkl'):
+
+    X = df.content.values
+    d = df.date.values
+    y = df.bias.values
+
+
+if __name__ == '__main__':
+    plac.call(main)
