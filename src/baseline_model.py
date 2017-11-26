@@ -71,13 +71,13 @@ def cos_sim(X, y):
     print('hp and reu : {}'.format(hp_reu_sim_score))
 
 
-def main(   train_data_loc=DATA_PATH+'formatted_arts.pkl',
-            test_data_loc=DATA_PATH+'formatted_test_arts.pkl'):
+def main(   train_data_loc=DATA_PATH+'articles.pkl',
+            test_data_loc=DATA_PATH+'holdout.pkl'):
 
     X = df.content.values
     d = df.date.values
     y = df.bias.values
-
+    
 
 if __name__ == '__main__':
     plac.call(main)

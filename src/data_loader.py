@@ -58,9 +58,9 @@ def load_dfs():
 def load_reddit():
     from dateutil import tz
 
-    left_df = st.open_as_df('left_reddit')
-    right_df = st.open_as_df('right_reddit')
-    neutral_df = st.open_as_df('neutral_reddit')
+    left_df = zutils.open_as_df('left_reddit')
+    right_df = zutils.open_as_df('right_reddit')
+    neutral_df = zutils.open_as_df('neutral_reddit')
 
 
     left_df['bias'] = -1;   left_df['orient'] = 'left'

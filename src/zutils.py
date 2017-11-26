@@ -8,9 +8,9 @@ from pymongo import MongoClient
 import urllib.parse
 
 from pathlib import Path
-import os
+import os, sys
 DATA_PATH = os.environ['DATA_PATH']
-
+import time
 
 
 '''MONGO UTILS'''
@@ -143,7 +143,7 @@ def resampler(y, resampling_type):
     return new_inds
 
 
-def load_and_configure_test_data(data_name='formatted_holdout.pkl', label_type='cats', verbose=True,
+def load_and_configure_test_data(data_name='holdout.pkl', label_type='cats', verbose=True,
                             labels=['left','right'], get_dates=False, space_zip=True):
     data_loc = DATA_PATH + data_name
     df = pd.read_pickle(data_loc)
@@ -165,7 +165,7 @@ def load_and_configure_test_data(data_name='formatted_holdout.pkl', label_type='
     return return_vals
 
 
-def load_and_configure_data(data_name='formatted_arts.pkl', label_type='cats', verbose=True, test_data=False,
+def load_and_configure_data(data_name='articles.pkl', label_type='cats', verbose=True, test_data=False,
                             test_size=0.2, labels=['left','right'],
                             get_dates=False, space_zip=True, resampling='over'):
     '''
@@ -223,10 +223,10 @@ def load_and_configure_data(data_name='formatted_arts.pkl', label_type='cats', v
         t_inds = resampler(y_t, resampling)
         y_t = y_t[t_inds]
 
-        if verbose:
-            print('After resampling: ')
-            print('train class support:')
-            pprint(y_t.value_counts())
+        # if verbose:
+        #     print('After resampling: ')
+        #     print('train class support:')
+        #     pprint(y_t.value_counts())
 
     X_t = df.iloc[t_inds].content.values
     X_e = df.iloc[e_inds].content.values
@@ -239,18 +239,87 @@ def load_and_configure_data(data_name='formatted_arts.pkl', label_type='cats', v
         print('\nFormatted ys as {}'.format(label_type))
         print('y_t[0] ==', y_t[0], '\n')
 
-    return_vals = [X_t, X_e, y_t, y_e]
+
+    train_data = [X_t, y_t]
+    test_data = [X_e, y_e]
 
     if get_dates:
         '''add dates to return list'''
         D_t = df.iloc[t_inds].date.values
         D_e = df.iloc[e_inds].date.values
-        return_vals.extend([D_t, D_e])
+        train_data.append(D_t)
+        test_data.append(D_e)
 
     if space_zip:
-        '''ignores dates!'''
-        train_data = zip_for_spacy(X_t, y_t)
-        test_data = zip_for_spacy(X_e, y_e)
-        return_vals = [train_data, test_data]
+        ''' zip features to labels '''
+        train_data = zip_for_spacy(*train_data)
+        test_data = zip_for_spacy(*test_data)
 
-    return return_vals
+
+    return train_data, test_data
+
+
+
+''' TERMINAL OUTPUT UTILS'''
+
+from multiprocessing import Pool
+
+
+def print_progress(title, total, x, start_time, other):
+    progress_frac = x/total
+    duration = time.time() - start_time+ 0.001
+    speed = progress_frac/duration + 0.001
+    seconds = int((1 - progress_frac) / speed)
+    minutes = int(seconds / 60)
+    seconds = seconds % 60
+    if minutes:
+        time_str = '{:2}:{:2}'.format(minutes,seconds)
+    else:
+        time_str = '{:2} s'.format(seconds)
+
+    bar_progress = int(progress_frac * 30)
+    x_len = len(str(x))
+    padding = len(str(total)) - x_len
+    sys.stdout.write('\r' +title +": ["+ "=" * (bar_progress) + '>' + '-' * (30-bar_progress) + '] ' +
+                                    ' ' * padding + str(x) +' / ' + str(total) +
+                                    ', eta: ' + time_str + ', ' + other)
+    sys.stdout.flush()
+
+
+
+class ProgressBar:
+    def __init__(self, title, total):
+        self.total = total
+        self.title = title
+        self.start_time = time.time()
+        self.processor = Pool(1)
+        self.progress(0)
+
+    def progress(self, x, other=''):
+        self.processor.apply(print_progress, (self.title, self.total, x, self.start_time, other))
+
+    def kill(self, other=''):
+        seconds = int(time.time() - self.start_time)
+        minutes = int(seconds / 60)
+        seconds = seconds % 60
+        if minutes:
+            time_str = '{:2}:{:2}'.format(minutes,seconds)
+        else:
+            time_str = '{:2} s'.format(seconds)
+        sys.stdout.write('\r' +self.title +": ["+"=" * 31  + "] "+
+                        str(self.total) +' / ' + str(self.total) +'time: '+ time_str +", " +other+ "\n" )
+        sys.stdout.flush()
+        self.processor.close()
+        self.processor.join()
+
+
+if __name__ == '__main__':
+
+    N = 100
+    n = 0
+    PB = ProgressBar('Bar', N)
+    while n < N:
+        n += 1
+        PB.progress(n)
+        time.sleep(0.02)
+    PB.kill()
