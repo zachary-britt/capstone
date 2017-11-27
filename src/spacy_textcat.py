@@ -85,40 +85,52 @@ class Model:
                 bar.progress(seen, loss_str)
             bar.kill(loss_str)
             # end of epoch report
-            scores = self.evaluate(val_data)
+            scores = self.evaluate_confusion(val_data)
 
 
-    def evaluate(self, annotated_data, verbose=True):
+    def evaluate_confusion(self, test_data):
         with self.textcat.model.use_params(self.optimizer.averages):
-            #ipdb.set_trace()
-            texts, labels = zip(*annotated_data)
+            from collections import Counter
+            texts, labels = zip(*test_data)
             docs = (self.nlp.tokenizer(text) for text in texts)
-            tp = 1e-8  # True positives
-            fp = 1e-8  # False positives
-            fn = 1e-8  # False negatives
-            tn = 1e-8  # True negatives
+
+            thresholds = {'left':0.5, 'right':0.5}
+
+            confusions = {   'left':Counter('tp':0.00001),
+                            'right':Counter('tp':0.00001)}
+
             for i, doc in enumerate(self.textcat.pipe(docs)):
                 gold = labels[i]['cats']
                 for label, score in doc.cats.items():
                     if label not in gold:
                         continue
-                    if score >= 0.5 and gold[label] >= 0.5:
-                        tp += 1.
-                    elif score >= 0.5 and gold[label] < 0.5:
-                        fp += 1.
-                    elif score < 0.5 and gold[label] < 0.5:
-                        tn += 1
-                    elif score < 0.5 and gold[label] >= 0.5:
-                        fn += 1
-            precision = tp / (tp + fp)
-            recall = tp / (tp + fn)
-            f_score = 2 * (precision * recall) / (precision + recall)
 
-            if verbose:
+                    t = thresholds[label]
+                    is_label = gold[label]
+
+                    if score >= t and is_label:
+                        confusions[label]['tp'] += 1.
+                    elif score >= t and is_label:
+                        confusions[label]['fp'] += 1.
+                    elif score < t and is_label:
+                        confusions[label]['tn'] += 1
+                    elif score < t and is_label:
+                        confusions[label]['fn'] += 1
+
+            for label in confusions:
+                M = confusions[label]
+                print('Scores for: {}'.format(label))
+
+                tp, fp, tn, fn = M['tp'], M['fp'], M['tn'], M['fn']
+
+                precision = tp / (tp + fp)
+                recall = tp / (tp + fn)
+                f_score = 2 * (precision * recall) / (precision + recall)
+
                 print('{:^5}\t{:^5}\t{:^5}'.format('P', 'R', 'F'))
                 print('{0:.3f}\t{1:.3f}\t{2:.3f}'.format(precision, recall, f_score))
 
-            return {'textcat_p': precision, 'textcat_r': recall, 'textcat_f': f_score}
+            return confusions
 
 
     def save(self, out_name=None):
@@ -142,7 +154,7 @@ class Model:
     reset_model=("Reset model found in model_loc", "flag", "r"),
     evaluate_only=('Dont train on data, just evaluate', 'flag','ev'),
     train_all=('Dont split data, train on full set', 'flag', 'tr'),
-    resampling=('Type of resampling to use [over, under]', 'option', 's'),
+    resampling=('Type of resampling to use [over, under, none]', 'option', 'rs'),
     dropout=("Dropout rate to use", 'option', 'do'),
     epochs=("Training epochs", 'option', 'ep'),
     learning_rate=('NN learning rate', 'option', 'lr'),
@@ -172,7 +184,7 @@ def main(   data_name='articles.pkl',
         model.fit(data_name, **kwargs)
         model.save(out_name)
     else:
-        model.evaluate(data_name, **kwargs)
+        model.evaluate_confusion(data_name, **kwargs)
 
 
 if __name__ == '__main__':
