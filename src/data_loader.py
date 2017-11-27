@@ -18,15 +18,17 @@ def fill_dates(df):
 def load_dfs():
 
     #open mongo collectoins as pandas dataframes
-    fox_df = zutils.open_as_df('fox')
-    hp_df = zutils.open_as_df('hp')
+    fox_df = zutils.open_as_df('fox')   #fox
+    hp_df = zutils.open_as_df('hp')     #huffpost
     reu_df = zutils.open_as_df('reuters')
-    mj_df = zutils.open_as_df('mj')
-    bb_df = zutils.open_as_df('bb')
-    od_df = zutils.open_as_df('od')
-    ads_df = zutils.open_as_df('ads')
+    mj_df = zutils.open_as_df('mj')     #motherjones
+    bb_df = zutils.open_as_df('bb')     #Breitbart
+    od_df = zutils.open_as_df('od')     #occupydemocrats
+    ads_df = zutils.open_as_df('ads')   #political advertisements
+
 
     # match up df format
+    fox_df['source']='fox'
     ads_df=ads_df[ads_df['supports'].isin(('Hillary Clinton','Donald Trump'))]
     hp_df.drop('author', axis=1, inplace=True)
     mj_df = fill_dates(mj_df)
@@ -47,13 +49,22 @@ def load_dfs():
     dfs = {'fox':fox_df, 'hp':hp_df, 'reu':reu_df, 'mj':mj_df, 'ads':ads_df,
             'bb':bb_df, 'od':od_df}
 
-    drops = ['author','source','supports']
+    drops = ['author','supports']
     for name in dfs:
         for col in drops:
             try: dfs[name].drop(col, axis=1, inplace=True)
             except: pass
     return dfs
 
+def load_holdout():
+    ai_df = zutils.open_as_df('ai')     #addicting info
+    gp_df = zutils.open_as_df('gp')     #the gateway pundit
+
+    ai_df['bias'] = -1;     ai_df['orient']= 'left';
+    gp_df['bias'] = 1;      gp_df['orient']= 'right';
+
+    dfs = {'ai':ai_df, 'gp':gp_df}
+    return dfs
 
 def load_reddit():
     from dateutil import tz

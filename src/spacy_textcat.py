@@ -23,6 +23,7 @@ class Model:
 
     def open_nlp_with_text_cat_(self, reset_model):
         if not self.model_dir.exists():
+            print('No model found at {}'.format(self.model_dir))
             reset_model = True
         if reset_model:
             print('Loading fresh nlp from en_core_web_lg')
@@ -40,37 +41,47 @@ class Model:
         self.nlp.disable_pipes(*other_pipes)  # only train textcat
 
 
-    def load_and_configure_training_data(self, data_loc, verbose):
+    def load_and_configure_training_data(self, data_name, **kwargs):
 
-        train_data, val_data = zutils.load_and_configure_data(data_name='articles.pkl',
-                                    label_type='cats', verbose=verbose, test_data=False,
-                                    test_size=0.2, labels=['left','right'],
-                                    get_dates=False, space_zip=True, resampling='over')
+        if kwargs.get('train_all',0):
+            test_size=0
+        else:
+            test_size=0.2
 
-        return train_data, val_data
+        data = zutils.load_and_configure_data(data_name=data_name,
+                                    label_type='cats', verbose=kwargs.get('verbose',0),
+                                    test_data=kwargs.get('test_only',0), test_size=0.2,
+                                    labels=['left','right'], get_dates=kwargs.get('dates',0),
+                                    space_zip=True, resampling=kwargs.get('resampling',0))
+
+        return data
 
 
-    def fit(self, data_loc, n_epochs, verbose=True):
+    def fit(self, data_name, **kwargs):
 
-        train_data, val_data= self.load_and_configure_training_data(data_loc, verbose)
+        data = self.load_and_configure_training_data(data_name, **kwargs)
 
-        self.optimizer = self.nlp.begin_training(n_workers = 6)
+        train_data = data.get('train')
+        val_data = data.get('test', 0)
+
+        self.optimizer = self.nlp.begin_training(n_workers = 8)
         print("Training the model...")
 
-        for i in range(n_epochs):
+        for i in range(kwargs.get('epochs', 1)):
             seen = 0
             bar = zutils.ProgressBar('Epoch: {}'.format(i+1), len(train_data))
             losses = {}
             # batch up the examples using spaCy's minibatch
-            batches = minibatch(train_data, size=compounding(4., 64., 1.01))
+            batches = minibatch(train_data, size=compounding(4., 64., 1.001))
             for j,batch in enumerate(batches):
                 texts, labels = zip(*batch)
 
-                self.nlp.update(texts, labels, sgd=self.optimizer, drop=0.4, losses=losses)
+                self.nlp.update(texts, labels, sgd=self.optimizer, drop=kwargs.get('dropout',0.5),
+                                losses=losses)
 
                 ''' in process validation so there's something to watch '''
                 seen += len(texts)
-                loss_str = 'Avg Loss: {0:.3f}'.format(losses['textcat']/seen)
+                loss_str = 'Avg Loss: {0:.3f}'.format(loss['textcat'] / seen)*100)
                 bar.progress(seen, loss_str)
             bar.kill(loss_str)
             # end of epoch report
@@ -111,33 +122,57 @@ class Model:
 
 
     def save(self, out_name=None):
-        output_dir = DATA_PATH + 'model_cache/' + out_name
-        if output_dir is not None:
+        if out_name:
+            output_dir = DATA_PATH + 'model_cache/' + out_name
+            print('saving to:')
             output_dir = Path(output_dir)
             if not output_dir.exists():
                 output_dir.mkdir()
         else:
             output_dir = self.model_dir
-
+            print('No output directory given, saving to model directory:')
+        print(output_dir)
         self.nlp.to_disk(output_dir)
-        print("Saved model to", output_dir)
+
 
 @plac.annotations(
-    data_name=("Location dataframe", "option", 'd'),
+    data_name=("Dataframe name", "option", 'd'),
     model_name=("Where to find the model", "option", 'm'),
     out_name=("where to save the model", 'option', 'o'),
-    reset_model=("Reset model found in model_loc", "flag", "r")
+    reset_model=("Reset model found in model_loc", "flag", "r"),
+    evaluate_only=('Dont train on data, just evaluate', 'flag','ev'),
+    train_all=('Dont split data, train on full set', 'flag', 'tr'),
+    resampling=('Type of resampling to use [over, under]', 'option', 's'),
+    dropout=("Dropout rate to use", 'option', 'do'),
+    epochs=("Training epochs", 'option', 'ep'),
+    learning_rate=('NN learning rate', 'option', 'lr'),
+    quiet=('Dont print all over everything','flag','q')
 )
 def main(   data_name='articles.pkl',
             model_name='spacy_clf',
             out_name='spacy_clf',
-            reset_model=False):
+            reset_model=False,
+            evaluate_only=False,
+            train_all=False,
+            resampling='over',
+            dropout=0.5,
+            epochs=1,
+            learning_rate=0.001,
+            quiet=False):
+
+    #ipdb.set_trace()
+
+    kwargs = {'evaluate_only':evaluate_only,'train_all':train_all,'resampling':resampling,
+                'dropout':dropout, 'epochs':epochs,'learning_rate':learning_rate,
+                'verbose': not quiet}
 
     model = Model(model_name, reset_model)
-    model.fit(data_name, n_epochs=1)
-    model.save(out_name)
 
-
+    if not kwargs.get('evaluate_only', 0):
+        model.fit(data_name, **kwargs)
+        model.save(out_name)
+    else:
+        model.evaluate(data_name, **kwargs)
 
 
 if __name__ == '__main__':

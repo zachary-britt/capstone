@@ -10,6 +10,45 @@ import os
 DATA_PATH = os.environ['DATA_PATH']
 
 
+'''
+TODO
+
+replace dataframe specific functions with a general function that takes:
+df:     (w/ 'source' column)
+
+    create: {source: {sign_ins: [], kill_froms: [], sign_outs: [], replacements: []}}
+    e.g.:
+    {
+        'fox':
+            {
+                'sign_ins': [
+                                    '’Fox & Friends First.’',
+                                    '’Special Report.’ \n',
+                                    ' AP, File)',
+                                    ' has the details. \n'
+                            ],
+
+                'kill_froms': [
+                                    ('is a Reporter for Fox', '\n'),
+                                    ('is a White House Producer for FOX', '\n')
+                            ],
+
+                'sign_outs': [
+                                    'Share your color commentary:',
+                                    '\n Click for more'
+                                    '\n Editor’s Note:'
+                            ],
+
+                'replacements': [
+                                    ('Fox News', 'this newspaper'),
+                                    ('FNC', 'this newspaper')
+                            ]
+            }
+    }
+
+It won't be THAT much shorter, but it will be a little cleaner
+'''
+
 
 def universal_text_cleaner(text):
 
@@ -28,6 +67,7 @@ def universal_text_cleaner(text):
 
     #strip links
     text = re.sub(r'http\S+', '', text)
+    text = re.sub(r'www\S+', '', text)
 
     for k in replacements:
         text = text.replace(k, replacements[k])
@@ -94,25 +134,24 @@ def universal_stripper(df):
     return df
 
 
-def kill_from_(text, keyword, startword):
+def kill_from_line(text, keyword):
+    ''' Look for keyword in text, if so, reverse search from keyword to newline,
+        end the text before the newline'''
+
     i = text.find(keyword)
     if i != -1:
-        j = text[:i].rfind(startword)
-        return text[:j]
+        j = text[:i].rfind('\n')
+        if j!=-1:
+            return text[:j]
+        else:
+            return ''
     else:
         return text
 
 
 def fox_clean_text(text):
-    '''
-    sign in: article summary (sometimes)
-            FILE (sometimes)
+    ''' Clean Fox Text '''
 
-    sign out (sometimes): \n Chris Stirewalt is the politics editor for Fox News.
-    Brianna McClelland contributed to this report. Want FOX News Halftime Report
-    in your inbox every day? Sign up here. \n Chris Stirewalt joined Fox News Channel
-    (FNC) in July of 2010 and serves as politics editor based in Washington, D.C. \n '
-    '''
 
     sign_ins =  [   ' \n                                      \n                                  \n ',
                     ' \n                           \n                       \n ',
@@ -149,14 +188,14 @@ def fox_clean_text(text):
         if i != -1:
             text = text[:i]
 
-    kill_from_args = [  ('is a Reporter for Fox', '\n'),
-                        ('is a White House Producer for FOX', '\n')
+    kill_from_args = [  'is a Reporter for F',
+                        'is a reporter for F',
+                        'is a White House Producer for FOX'
                      ]
-
+    #ipdb.set_trace()
     for kill_from_arg in kill_from_args:
-        kill_args = [text]
-        kill_args.extend(kill_from_arg)
-        text = kill_from_(*kill_args)
+        kill_args = [text, kill_from_arg]
+        text = kill_from_line(*kill_args)
 
 
     text = text.replace('Fox News', 'this newspaper')
@@ -170,6 +209,7 @@ def fox_clean_text(text):
 
 
 def fox_clean(df):
+    ''' clean Fox Dataframe '''
     from formatter import fox_clean_text
     pool = Pool(4)
     df['content'] = pool.map(fox_clean_text, df['content'])
@@ -179,7 +219,7 @@ def fox_clean(df):
 
 
 def hp_clean_text(text):
-
+    ''' clean Huffington Post Text '''
     aborts = [  '(Reuters)',
                 'HUFFPOST HILL',
                 'The Morning Email']
@@ -207,14 +247,14 @@ def hp_clean_text(text):
         if i != -1:
             text = text[:i]
 
-    kill_from_args = [  (' is HuffPost’s ', '\n'),
-                        ('Have a tip? ', '\n'),
-                        ('Check out the full', '\n')
+    kill_from_args = [  ' is HuffPost’s ',
+                        'Have a tip? ',
+                        'Check out the full'
                      ]
 
     for kill_from_arg in kill_from_args:
-        kill_args = [text, kill_from_arg[0], kill_from_arg[1]]
-        text = kill_from_(*kill_args)
+        kill_args = (text, kill_from_arg)
+        text = kill_from_line(*kill_args)
 
 
     text = text.replace('HuffPost', 'this newspaper')
@@ -224,7 +264,7 @@ def hp_clean_text(text):
 
 
 def hp_clean(df):
-
+    ''' clean Huffington Post Dataframe '''
     from formatter import hp_clean_text
     # pool = Pool(4)
     # df['content'] = pool.map(hp_clean_text, df['content'])
@@ -234,13 +274,7 @@ def hp_clean(df):
 
 
 def reu_clean_text(text):
-    '''
-    sign in: 'WASHINGTON (Reuters) -
-
-    sign out \n Reporting by David Morgan and Amanda Becker; Additional reporting
-    by Ginger Gibson, Jeff Mason, Susan Cornwell and Richard Cowan; Editing by Diane
-     Craft and Peter Cooney'
-    '''
+    ''' clean Reuters text '''
 
     sign_ins =  [  ' (Reuters) -',
                     'WASHINGTON'
@@ -250,6 +284,7 @@ def reu_clean_text(text):
         i = text.find(sign_in)
         if i != -1:
             text = text[i+len(sign_in):]
+
 
     sign_offs = [   ' \n Reporting by ',
                     ' \n reporting by ',
@@ -260,7 +295,6 @@ def reu_clean_text(text):
                     ' \n writing by'
                     ' \n Writing by'
                     ' \n Writing By'
-
                 ]
 
     for sign_off in sign_offs:
@@ -268,13 +302,12 @@ def reu_clean_text(text):
         if i != -1:
             text = text[:i]
 
-
-
     text = text.replace('Reuters', 'this newspaper')
     return text
 
 
 def reu_clean(df):
+    ''' clean Reuters dataframe '''
     from formatter import reu_clean_text
     pool = Pool(4)
     df['content'] = pool.map(reu_clean_text, df['content'])
@@ -284,6 +317,7 @@ def reu_clean(df):
 
 
 def bb_clean_text(text):
+    ''' clean Breitbart text '''
     sign_ins =  [  ' (Reuters) -',
                     'WASHINGTON'
                 ]
@@ -294,17 +328,17 @@ def bb_clean_text(text):
 
 
 
-    kill_from_args = [  ('Follow him on Twitter ', '\n'),
-                        ('is a reporter for Breitbart News', '\n'),
-                        ('Check out the full', '\n'),
-                        ('is a Breitbart News', '\n'),
-                        ('Daily airs on ', '\n'),
-                        ('columnist for Br', '\n')
+    kill_from_args = [  'Follow him on Twitter ',
+                        'is a reporter for Breitbart News',
+                        'Check out the full',
+                        'is a Breitbart News',
+                        'Daily airs on ',
+                        'columnist for Br'
                      ]
 
     for kill_from_arg in kill_from_args:
-        kill_args = [text, kill_from_arg[0], kill_from_arg[1]]
-        text = kill_from_(*kill_args)
+        kill_args = [text, kill_from_arg]
+        text = kill_from_line(*kill_args)
 
 
     sign_offs = [   '\nFollow ', '\n Follow ',
@@ -323,6 +357,7 @@ def bb_clean_text(text):
     return text
 
 def bb_clean(df):
+    ''' clean Breitbart dataframe '''
     from formatter import bb_clean_text
     pool = Pool(4)
     df['content'] = pool.map(bb_clean_text, df['content'])
@@ -331,37 +366,39 @@ def bb_clean(df):
 
 
 def mj_clean_text(text):
-        sign_ins =  [
-                    ]
-        for sign_in in sign_ins:
-            i = text.find(sign_in)
-            if i != -1:
-                text = text[i+len(sign_in):]
+    ''' clean motherjones text '''
+    sign_ins =  [
+                ]
+    for sign_in in sign_ins:
+        i = text.find(sign_in)
+        if i != -1:
+            text = text[i+len(sign_in):]
 
-        kill_from_args = [  ('Follow him on Twitter ', '\n'),
-                            ('Sign up for ', '\n')
-                         ]
+    kill_from_args = [  'Follow him on Twitter ',
+                        'Sign up for '
+                     ]
 
-        for kill_from_arg in kill_from_args:
-            kill_args = [text, kill_from_arg[0], kill_from_arg[1]]
-            text = kill_from_(*kill_args)
+    for kill_from_arg in kill_from_args:
+        kill_args = [text, kill_from_arg]
+        text = kill_from_line(*kill_args)
 
 
-        sign_offs = [   '\nRead the full ',
-                        '\nThis is a developing story'
-                    ]
+    sign_offs = [   '\nRead the full ',
+                    '\nThis is a developing story'
+                ]
 
-        for sign_off in sign_offs:
-            i = text.find(sign_off)
-            if i != -1:
-                text = text[:i]
+    for sign_off in sign_offs:
+        i = text.find(sign_off)
+        if i != -1:
+            text = text[:i]
 
-        text = text.replace('Mother Jones', 'this newspaper')
-        text = text.replace('MJ', 'this newspaper')
-        text = text.replace('&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;lt;span data-mce-type=”bookmark” style=”display: inline-block; width: 0px; overflow: hidden; line-height: 0;” class=”mce_SELRES_start”&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;gt;\ufeff&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;lt;/span&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;gt;','')
-        return text
+    text = text.replace('Mother Jones', 'this newspaper')
+    text = text.replace('MJ', 'this newspaper')
+    text = text.replace('&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;lt;span data-mce-type=”bookmark” style=”display: inline-block; width: 0px; overflow: hidden; line-height: 0;” class=”mce_SELRES_start”&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;gt;\ufeff&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;lt;/span&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;gt;','')
+    return text
 
 def mj_clean(df):
+    ''' clean motherjones dataframe '''
     from formatter import mj_clean_text
     pool = Pool(4)
     df['content'] = pool.map(mj_clean_text, df['content'])
@@ -369,38 +406,44 @@ def mj_clean(df):
 
 
 def od_clean_text(text):
+    ''' Clean occupydemocrats text '''
+    kill_from_args = [  'Follow him on Twitter ',
+                        'Sign up for ',
+                     ]
 
-        kill_from_args = [  ('Follow him on Twitter ', '\n'),
-                            ('Sign up for ', '\n')
-                         ]
-
-        for kill_from_arg in kill_from_args:
-            kill_args = [text, kill_from_arg[0], kill_from_arg[1]]
-            text = kill_from_(*kill_args)
+    for kill_from_arg in kill_from_args:
+        kill_args = [text, kill_from_arg]
+        text = kill_from_line(*kill_args)
 
 
-        sign_offs = [   '\nDownload our NEW',
-                        '\n Download our NEW',
-                        '\nWatch his remarks here:\n',
-                        'Add your name to millions',
-                        '\n A post shared by '
-                    ]
+    sign_offs = [   '\nDownload our NEW',
+                    '\n Download our NEW',
+                    '\nWatch his remarks here:\n',
+                    'Add your name to millions',
+                    '\n A post shared by '
+                ]
 
-        for sign_off in sign_offs:
-            i = text.find(sign_off)
-            if i != -1:
-                text = text[:i]
+    for sign_off in sign_offs:
+        i = text.find(sign_off)
+        if i != -1:
+            text = text[:i]
 
-        return text
+    return text
 
 def od_clean(df):
+    ''' Clean occupydemocrats dataframe '''
     from formatter import od_clean_text
     pool = Pool(4)
     df['content'] = pool.map(od_clean_text, df['content'])
     return df
 
 
+def ai_clean(df):
+    pass
+
+
 def find_leak(df, keyword):
+    ''' For data munging, find a potentially leaky text segment '''
     for content in list(df.content.values):
         i = content.find(keyword)
         section = content[i-100:]
@@ -408,15 +451,30 @@ def find_leak(df, keyword):
             yield section
 
 
-def cull_shorts(df):
+def cull_shorts(df, min_length=400):
+    ''' Cut out rows with less than min_length chrs of text '''
     lens = np.array(df.content.apply(len))
-    inds = np.argwhere(lens > 400).ravel()
+    inds = np.argwhere(lens > min_length).ravel()
     df = df.iloc[inds]
     df.reset_index(inplace=True)
     return df
 
 
+
+
+
+
 def main(out_dir=DATA_PATH):
+    '''
+        Load dfs from table using data_loader
+        Run universal_cleaner on text
+
+        Run source specific cleaning on text
+            (depends on consistent formatting, i.e. don't change universal_cleaner)
+
+        Run universal_stripper on text
+     '''
+
 
     ''' Article Dfs'''
     dfs = dl.load_dfs()
@@ -432,25 +490,33 @@ def main(out_dir=DATA_PATH):
 
     dfs = {name:universal_stripper(dfs[name]) for name in dfs}
     dfs = {name:cull_shorts(dfs[name]) for name in dfs}
-
     df = pd.concat( list(dfs.values()), ignore_index=True )
-
     df.to_pickle(out_dir+'articles.pkl')
+
+    print("Cleaned articles, you've got {} of them".format(df.shape[0]))
 
     '''Reddit dfs'''
     rdf = dl.load_reddit()
     rdf = universal_cleaner(rdf)
     rdf = universal_stripper(rdf)
-    rdf = cull_shorts(rdf)  # cull comments shorter than 400 after stripping
-    rdf.to_pickle
+    rdf = cull_shorts(rdf)
     rdf.to_pickle(out_dir+'reddit.pkl')
+
+    print("Cleaned reddit comments, you've got {} of them".format(rdf.shape[0]))
 
 
     ''' Holdout Dfs'''
+    hdf = dl.load_holdout()
+    hdf = {name:universal_cleaner(hdf[name]) for name in hdf}
+    hdf = {name:universal_stripper(hdf[name]) for name in hdf}
+    hdf = {name:cull_shorts(hdf[name]) for name in hdf}
+    hdf = pd.concat( list(hdf.values()), ignore_index=True )
+    hdf.to_pickle(out_dir+'holdout.pkl')
 
-    
+    print("Cleaned holdout articles, you've got {} of them".format(hdf.shape[0]))
 
-    return df, rdf
+
+    return df, rdf, hdf
 
 if __name__ == '__main__':
     plac.call(main)

@@ -162,11 +162,11 @@ def load_and_configure_test_data(data_name='holdout.pkl', label_type='cats', ver
     if space_zip:
         return_vals = zip_for_spacy(X,y,D)
 
-    return return_vals
+    return {'test':return_vals}
 
 
-def load_and_configure_data(data_name='articles.pkl', label_type='cats', verbose=True, test_data=False,
-                            test_size=0.2, labels=['left','right'],
+def load_and_configure_data(data_name='articles.pkl', label_type='cats', verbose=True,
+                            test_data=False, test_size=0.2, labels=['left','right'],
                             get_dates=False, space_zip=True, resampling='over'):
     '''
     Prep formatted dataframe for training or testing
@@ -218,15 +218,11 @@ def load_and_configure_data(data_name='articles.pkl', label_type='cats', verbose
         print()
 
 
-    if resampling:
+    if resampling == 'over' or resampling == 'under':
         if verbose: print('rebalancing classes via {}sampling'.format(resampling))
         t_inds = resampler(y_t, resampling)
         y_t = y_t[t_inds]
 
-        # if verbose:
-        #     print('After resampling: ')
-        #     print('train class support:')
-        #     pprint(y_t.value_counts())
 
     X_t = df.iloc[t_inds].content.values
     X_e = df.iloc[e_inds].content.values
@@ -256,7 +252,7 @@ def load_and_configure_data(data_name='articles.pkl', label_type='cats', verbose
         test_data = zip_for_spacy(*test_data)
 
 
-    return train_data, test_data
+    return {'train':train_data, 'test':test_data}
 
 
 
