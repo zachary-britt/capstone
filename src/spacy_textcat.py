@@ -52,9 +52,16 @@ class Model:
         else:
             test_size=0.2
 
+        if kwargs.get('float_bias',0):
+            label_type = 'catbias'
+        else:
+            label_type = 'cats'
+
+
+        #TODO: push all this kwarg option crap down into zutils
         data = zutils.load_and_configure_data(data_name=data_name,
-                                    label_type='cats', verbose=kwargs.get('verbose',0),
-                                    test_data=kwargs.get('test_only',0), test_size=0.2,
+                                    label_type=label_type, verbose=kwargs.get('verbose',0),
+                                    test_data=kwargs.get('test_only',0), test_size=test_size,
                                     labels=['left','right'], get_dates=kwargs.get('dates',0),
                                     space_zip=True, resampling=kwargs.get('resampling',0))
 
@@ -76,8 +83,11 @@ class Model:
             bar = zutils.ProgressBar('Epoch: {}'.format(i+1), len(train_data))
             losses = {}
             # batch up the examples using spaCy's minibatch
-            # batches = minibatch(train_data, size=compounding(4., 64., 1.001))
-            batches = minibatch(train_data, size=compounding(32., 64., 1.001))
+
+            minb = kwargs.get('minb',32.)
+            maxb = kwargs.get('maxb',64.)
+
+            batches = minibatch(train_data, size=compounding(minb, maxb, 1.001))
             for j,batch in enumerate(batches):
                 texts, labels = zip(*batch)
 
@@ -90,40 +100,25 @@ class Model:
 
             bar.kill(loss_str)
             # end of epoch report
-            scores = self.evaluate_confusion(val_data)
+            if val_data.shape[0]: #check val data not empty
+                with self.textcat.model.use_params(self.optimizer.averages):
+                    scores = self.evaluate_confusion(val_data)
 
 
     def score_texts(self, texts):
-        with self.textcat.model.use_params(self.optimizer.averages):
-            scores = []
-            docs = (self.nlp.tokenizer(text) for text in texts)
-            N = len(texts)
-            s = 64
-            splits = [s for _ in range(int(N/s))]; splits.append(N % s);
-            doc_chunks = ([next(docs) for _ in range(split)] for split in splits)
-            bar = zutils.ProgressBar('Eval: ', N)
-            for chunk in doc_chunks:
-                for doc in self.textcat.pipe(chunk):
-                    scores.append(doc.cats)
-                    bar.increment()
-            bar.kill()
-            return scores
-
-
-    def build_confusion(self, y_true, y_pred, thresh):
-
-        tpi = np.where( y_true & (y_pred >= thresh), 1, 0)
-        fpi = np.where( ~y_true & (y_pred >= thresh), 1, 0)
-        tni = np.where( ~y_true & (y_pred < thresh), 1, 0)
-        fni = np.where( y_true & (y_pred < thresh), 1, 0)
-
-        tp = tpi.sum()
-        fp = fpi.sum()
-        tn = tni.sum()
-        fn = fni.sum()
-
-        M = {'tp':tp, 'fp':fp, 'tn':tn, 'fn': fn}
-        return M
+        scores = []
+        docs = (self.nlp.tokenizer(text) for text in texts)
+        N = len(texts)
+        s = 64
+        splits = [s for _ in range(int(N/s))]; splits.append(N % s);
+        doc_chunks = ([next(docs) for _ in range(split)] for split in splits)
+        bar = zutils.ProgressBar('Eval: ', N)
+        for chunk in doc_chunks:
+            for doc in self.textcat.pipe(chunk):
+                scores.append(doc.cats)
+                bar.increment()
+        bar.kill()
+        return scores
 
     def evaluate_confusion(self, test_data):
         thresholds = {'left':0.5, 'right':0.5}
@@ -138,6 +133,15 @@ class Model:
 
             M = eval_utils.build_confusion(real_labels, label_scores, thresh)
             eval_utils.print_confusion_report(M, label)
+
+    def predict_proba(self, texts, label=None):
+        if label:
+            labels = [label]
+        else:
+            labels = self.labels
+        scores = self.score_texts(texts)
+        probs = {[ score[label] for score in scores ] for label in labels}
+        return np.array(probs)
 
 
     def save(self, out_name=None):
@@ -163,6 +167,9 @@ class Model:
     train_all=('Dont split data, train on full set', 'flag', 'tr', bool),
     resampling=('Type of resampling to use [over, under, none]', 'option', 'rs', str),
     dropout=("Dropout rate to use", 'option', 'do', float),
+    min_batch_size=("Minimum Batch size", 'option', "minb", float),
+    max_batch_size=("Maximum Batch size", 'option', "maxb", float),
+    float_bias=('Use float proportional bias', 'flag', 'fb', bool),
     epochs=("Training epochs", 'option', 'ep', int),
     quiet=('Dont print all over everything','flag','q', bool)
 )
@@ -174,13 +181,17 @@ def main(   data_name='articles.pkl',
             train_all=False,
             resampling='over',
             dropout=0.5,
+            min_batch_size=4.,
+            max_batch_size=64.,
+            float_bias=False,
             epochs=1,
             quiet=False):
 
     #ipdb.set_trace()
 
     kwargs = {'evaluate_only':evaluate_only,'train_all':train_all,'resampling':resampling,
-                'dropout':dropout, 'epochs':epochs, 'verbose': not quiet}
+                'dropout':dropout, 'epochs':epochs, 'verbose': not quiet,
+                'minb':min_batch_size,'maxb':max_batch_size, 'float_bias':float_bias}
 
     model = Model(model_name, reset_model)
 

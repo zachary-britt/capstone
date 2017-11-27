@@ -17,4 +17,6 @@ source ~/.bashrc
 #python spacy_textcat.py -d articles.pkl -m spacy_2.1 -o spacy_2.2 -rs under
 # python spacy_textcat.py -d articles.pkl -m spacy_2.2 -o spacy_2.3 -rs over \
 #   -ep 2
-python spacy_textcat.py -d reddit.pkl -m spacy_2.3 -o spacy_2.4 -rs none
+#python spacy_textcat.py -d reddit.pkl -m spacy_2.3 -o spacy_2.4 -rs none
+python spacy_textcat.py -d articles.pkl -m spacy_2.5 -o spacy_2.5 -rs under \
+    -tr -minb 64.0 -maxb 256.0

@@ -256,8 +256,8 @@ def peek_tagger(df, tag_loc, peek_size=250, get_peek=False):
         l_inds = df[df.orient == 'left'].index.values
         r_inds = df[df.orient == 'right'].index.values
 
-        l_peek_inds = np.random.choice(l_inds, peek_size, replacement=False)
-        r_peek_inds = np.random.choice(r_inds, peek_size, replacement=False)
+        l_peek_inds = np.random.choice(l_inds, peek_size, replace=False)
+        r_peek_inds = np.random.choice(r_inds, peek_size, replace=False)
 
         peek_inds = np.hstack([l_peek_inds, r_peek_inds])
 

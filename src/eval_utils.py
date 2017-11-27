@@ -4,9 +4,7 @@ import matplotlib.pyplot as plt
 
 
 def make_roc_plot(y_true, y_pred, label):
-    pass
-
-    threshes = np.arange(0, 1, 0.01)
+    threshes = np.linspace(0, 1)
     Ms = [build_confusion(y_true, y_pred,t) for t in threshes]
 
     PRFs = [calc_PRF(M) for M in Ms]
@@ -14,12 +12,17 @@ def make_roc_plot(y_true, y_pred, label):
     P, R, F = np.array(P), np.array(R), np.array(F)
 
     plt.plot(R, P, label = label)
-    
+    plt.plot(1-threshes, threshes, '--', c='r' )
+    plt.legend()
+    plt.show()
 
 
 
 
 def build_confusion(y_true, y_pred, thresh):
+
+    y_true = np.array(y_true)
+    y_pred = np.array(y_pred)
 
     tpi = np.where( y_true & (y_pred >= thresh), 1, 0)
     fpi = np.where( ~y_true & (y_pred >= thresh), 1, 0)
