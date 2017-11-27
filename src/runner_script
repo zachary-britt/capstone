@@ -13,4 +13,8 @@ source ~/.bashrc
 #holdout.pkl    # HOLDOUT
 
 #python spacy_textcat.py
-python spacy_textcat.py -d articles.pkl -m spacey_2.0
+#python spacy_textcat.py -d articles.pkl -m spacy_2.0 -o spacy_2.1 -rs none
+#python spacy_textcat.py -d articles.pkl -m spacy_2.1 -o spacy_2.2 -rs under
+# python spacy_textcat.py -d articles.pkl -m spacy_2.2 -o spacy_2.3 -rs over \
+#   -ep 2
+python spacy_textcat.py -d reddit.pkl -m spacy_2.3 -o spacy_2.4 -rs none

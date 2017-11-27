@@ -12,6 +12,8 @@ import os, sys
 DATA_PATH = os.environ['DATA_PATH']
 import time
 
+from multiprocessing import Pool
+
 
 '''MONGO UTILS'''
 
@@ -61,14 +63,22 @@ def make_cat_dict(y, labels):
     y = [{label:value == label for label in labels} for value in y]
     return y
 
+def bi_dict(row, labels):
+    d = { label: (row['bias'] if row['orient']==label else 0) for label in labels }
+    return d
+
+def make_catbias_dict(df, labels):
+    y = np.array(df.apply(bi_dict, axis=1, labels=labels))
+    return y
+
 
 def make_one_hot(y, labels):
     hot_cols = [ np.where(y==label, 1, 0).reshape(-1,1) for label in labels ]
     return hstack(hot_cols)
 
 
-def tt_split_df(df, test_size, tag_loc, new_tags):
-
+def tt_split_df(df, test_size, tag_loc):
+    new_tags = not tag_loc.exists()
     if new_tags:
         '''perform ttsplit and save object tags for test'''
         inds = df.index.values
@@ -97,15 +107,19 @@ def zip_for_spacy(X, y_dict, D=None):
     else:
         return list(zip(X, D, [{'cats': cats} for cats in y_dict]))
 
-def format_y(y, label_type, labels):
+def format_y(df, label_type='cats', labels=['left','right']):
+
     if label_type == 'string':
-        y = y.values
+        y = df.orient.values
 
-    if label_type == 'cats':
-        y = make_cat_dict(y, labels)
+    elif label_type == 'cats':
+        y = make_cat_dict(df.orient, labels)
 
-    if label_type == 'one_hot':
-        y = make_one_hot(y, labels)
+    elif label_type == 'one_hot':
+        y = make_one_hot(df.orient, labels)
+
+    elif label_type == 'catbias':
+        y = make_catbias_dict(df, labels)
 
     return y
 
@@ -143,27 +157,7 @@ def resampler(y, resampling_type):
     return new_inds
 
 
-def load_and_configure_test_data(data_name='holdout.pkl', label_type='cats', verbose=True,
-                            labels=['left','right'], get_dates=False, space_zip=True):
-    data_loc = DATA_PATH + data_name
-    df = pd.read_pickle(data_loc)
-    y = df.orient.values
-    X = df.content.values
-    y = format_y(y)
-
-    return_vals = [X,y]
-
-    if get_dates:
-        D = df.date.values
-        return_vals.append(D)
-    else:
-        D = None
-
-    if space_zip:
-        return_vals = zip_for_spacy(X,y,D)
-
-    return {'test':return_vals}
-
+''' MAIN DATA LOADER '''
 
 def load_and_configure_data(data_name='articles.pkl', label_type='cats', verbose=True,
                             test_data=False, test_size=0.2, labels=['left','right'],
@@ -191,20 +185,21 @@ def load_and_configure_data(data_name='articles.pkl', label_type='cats', verbose
 
     df = pd.read_pickle(data_loc)
 
-    '''Check for tt_split tags'''
-    tag_loc = DATA_PATH + 'tag_dir/'+data_name[ :data_name.find('.')]+'_tags.npy'
-    tag_loc = Path(tag_loc)
-    if not tag_loc.exists():
-        if verbose: print('setting train test tags')
-        new_tags=True
-    else:
-        if verbose: print('using saved train test tags')
-        new_tags=False
+    if test_size:
+        '''Check for tt_split tags'''
+        tag_loc = DATA_PATH + 'tag_dir/'+data_name[ :data_name.find('.')]+'_tags.npy'
+        tag_loc = Path(tag_loc)
+        if not tag_loc.exists():
+            if verbose: print('setting train test tags')
+        else:
+            if verbose: print('using saved train test tags')
 
+        ''' test train split '''
+        df, t_inds, e_inds  = tt_split_df(df, test_size, tag_loc)
 
-
-    ''' test train split '''
-    df, t_inds, e_inds  = tt_split_df(df, test_size, tag_loc, new_tags)
+    else:   # test size is None, all inds are training inds
+        t_inds = df.index.values
+        e_inds = np.array([])
 
     y_t = df.iloc[t_inds].orient
     y_e = df.iloc[e_inds].orient
@@ -228,8 +223,8 @@ def load_and_configure_data(data_name='articles.pkl', label_type='cats', verbose
     X_e = df.iloc[e_inds].content.values
 
     # format y values
-    y_t = format_y(y_t, label_type, labels)
-    y_e = format_y(y_e, label_type, labels)
+    y_t = format_y(df.iloc[t_inds], label_type, labels)
+    y_e = format_y(df.iloc[e_inds], label_type, labels)
 
     if verbose:
         print('\nFormatted ys as {}'.format(label_type))
@@ -256,9 +251,97 @@ def load_and_configure_data(data_name='articles.pkl', label_type='cats', verbose
 
 
 
-''' TERMINAL OUTPUT UTILS'''
+def peek_tagger(df, tag_loc, peek_size=250, get_peek=False):
+    if not tag_loc.exists():
+        l_inds = df[df.orient == 'left'].index.values
+        r_inds = df[df.orient == 'right'].index.values
 
-from multiprocessing import Pool
+        l_peek_inds = np.random.choice(l_inds, peek_size, replacement=False)
+        r_peek_inds = np.random.choice(r_inds, peek_size, replacement=False)
+
+        peek_inds = np.hstack([l_peek_inds, r_peek_inds])
+
+        # save tags
+        tags = df.iloc[peek_inds]._id.values
+        np.save(tag_loc, tags)
+
+    else:
+        # load tags
+        tags = np.load(tag_loc)
+        # match saved object tags to df _ids
+        peek_inds = df[np.isin(df._id, tags, assume_unique=True)].index.values
+    all_inds = df.index.values
+    test_inds = np.setdiff1d(all_inds, peek_inds, assume_unique=True)
+
+    if get_peek:
+        np.random.shuffle(peek_inds)
+        return peek_inds
+    else:
+        np.random.shuffle(test_inds)
+        return test_inds
+
+
+def load_peek_set(data_name='holdout.pkl',label_type='cats', verbose=True,
+                    labels=['left','right'], get_dates=False, space_zip=True):
+    data_loc = DATA_PATH + data_name
+    df = pd.read_pickle(data_loc)
+
+    tag_loc = DATA_PATH + 'tag_dir/'+data_name[ :data_name.find('.')]+'_tags.npy'
+    tag_loc = Path(tag_loc)
+    if not tag_loc.exists():
+        if verbose: print('setting peek tags')
+    else:
+        if verbose: print('using saved peek tags')
+
+    peek_size = 250
+    peek_inds = peek_tagger(df, tag_loc, peek_size=peek_size, get_peek=True )
+    df = df.iloc[peek_inds]
+
+    X = df.content.values
+    y = format_y(df, label_type='cats')
+
+    if get_dates:
+        D = df.date.values
+        return_vals.append(D)
+    else:
+        D = None
+
+    if space_zip:
+        return_vals = zip_for_spacy(X,y,D)
+
+    return {'test':return_vals}
+
+
+def load_and_configure_test_data(data_name='holdout.pkl', label_type='cats', verbose=True,
+                            labels=['left','right'], get_dates=False, space_zip=True):
+    data_loc = DATA_PATH + data_name
+    df = pd.read_pickle(data_loc)
+
+    tag_loc = DATA_PATH + 'tag_dir/'+data_name[ :data_name.find('.')]+'_tags.npy'
+    tag_loc = Path(tag_loc)
+    if verbose: print('cutting peeked tags')
+
+    test_inds = peek_tagger(df, tag_loc)
+    df = df[test_inds]
+    X = df.content.values
+    y = format_y(df, label_type, labels)
+
+    return_vals = [X,y]
+
+    if get_dates:
+        D = df.date.values
+        return_vals.append(D)
+    else:
+        D = None
+
+    if space_zip:
+        return_vals = zip_for_spacy(X,y,D)
+
+    return {'test':return_vals}
+
+
+
+''' TERMINAL OUTPUT UTILS'''
 
 
 def print_progress(title, total, x, start_time, other):
@@ -290,9 +373,14 @@ class ProgressBar:
         self.start_time = time.time()
         self.processor = Pool(1)
         self.progress(0)
+        self.n=0
 
     def progress(self, x, other=''):
         self.processor.apply(print_progress, (self.title, self.total, x, self.start_time, other))
+
+    def increment(self, x=1, other=''):
+        self.n += x
+        self.progress(self.n, other)
 
     def kill(self, other=''):
         seconds = int(time.time() - self.start_time)

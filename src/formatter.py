@@ -62,7 +62,17 @@ def universal_text_cleaner(text):
             ' "': " “",     # open quote
             '" ': "” ",      # close quote
             '&gt;':'' ,     # using > in stories is a 4chan thing
-            '&lt;':''
+            '&lt;':'',
+            """â""":'’',
+            """â\\x80\\x93""":'’',
+            '''â\x80\x99''':'’',
+            """â""":'“',
+            """â\\x80\\x9c'""":'“',
+            """â""":'”',
+            '''â\\x80\\x9d''':'”'
+
+
+
         }
 
     #strip links
@@ -505,15 +515,21 @@ def main(out_dir=DATA_PATH):
     print("Cleaned reddit comments, you've got {} of them".format(rdf.shape[0]))
 
 
+
+
+
     ''' Holdout Dfs'''
-    hdf = dl.load_holdout()
-    hdf = {name:universal_cleaner(hdf[name]) for name in hdf}
-    hdf = {name:universal_stripper(hdf[name]) for name in hdf}
-    hdf = {name:cull_shorts(hdf[name]) for name in hdf}
-    hdf = pd.concat( list(hdf.values()), ignore_index=True )
+    hdfs = dl.load_holdout()
+    hdfs = {name:universal_cleaner(hdfs[name]) for name in hdfs}
+    hdfs = {name:universal_stripper(hdfs[name]) for name in hdfs}
+    hdfs = {name:cull_shorts(hdfs[name]) for name in hdfs}
+
+    hdf = pd.concat( list(hdfs.values()), ignore_index=True )
     hdf.to_pickle(out_dir+'holdout.pkl')
 
     print("Cleaned holdout articles, you've got {} of them".format(hdf.shape[0]))
+
+
 
 
     return df, rdf, hdf

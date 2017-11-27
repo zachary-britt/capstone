@@ -2,15 +2,19 @@ import spacy
 import pandas as pd
 import numpy as np
 from spacy.util import minibatch, compounding
+from spacy import util
 from pathlib import Path
 import plac
 from pprint import pprint
 import ipdb
-import zutils
+from collections import Counter
+from multiprocessing import Pool
 
 import os
 DATA_PATH = os.environ['DATA_PATH']
 
+import zutils
+import eval_utils
 
 class Model:
 
@@ -72,65 +76,68 @@ class Model:
             bar = zutils.ProgressBar('Epoch: {}'.format(i+1), len(train_data))
             losses = {}
             # batch up the examples using spaCy's minibatch
-            batches = minibatch(train_data, size=compounding(4., 64., 1.001))
+            # batches = minibatch(train_data, size=compounding(4., 64., 1.001))
+            batches = minibatch(train_data, size=compounding(32., 64., 1.001))
             for j,batch in enumerate(batches):
                 texts, labels = zip(*batch)
 
                 self.nlp.update(texts, labels, sgd=self.optimizer, drop=kwargs.get('dropout',0.5),
                                 losses=losses)
 
-                ''' in process validation so there's something to watch '''
                 seen += len(texts)
-                loss_str = 'Avg Loss: {0:.3f}'.format(loss['textcat'] / seen)*100)
+                loss_str = 'Avg Loss: {0:.3f}'.format(100*losses['textcat'] / seen)
                 bar.progress(seen, loss_str)
+
             bar.kill(loss_str)
             # end of epoch report
             scores = self.evaluate_confusion(val_data)
 
 
-    def evaluate_confusion(self, test_data):
+    def score_texts(self, texts):
         with self.textcat.model.use_params(self.optimizer.averages):
-            from collections import Counter
-            texts, labels = zip(*test_data)
+            scores = []
             docs = (self.nlp.tokenizer(text) for text in texts)
+            N = len(texts)
+            s = 64
+            splits = [s for _ in range(int(N/s))]; splits.append(N % s);
+            doc_chunks = ([next(docs) for _ in range(split)] for split in splits)
+            bar = zutils.ProgressBar('Eval: ', N)
+            for chunk in doc_chunks:
+                for doc in self.textcat.pipe(chunk):
+                    scores.append(doc.cats)
+                    bar.increment()
+            bar.kill()
+            return scores
 
-            thresholds = {'left':0.5, 'right':0.5}
 
-            confusions = {   'left':Counter('tp':0.00001),
-                            'right':Counter('tp':0.00001)}
+    def build_confusion(self, y_true, y_pred, thresh):
 
-            for i, doc in enumerate(self.textcat.pipe(docs)):
-                gold = labels[i]['cats']
-                for label, score in doc.cats.items():
-                    if label not in gold:
-                        continue
+        tpi = np.where( y_true & (y_pred >= thresh), 1, 0)
+        fpi = np.where( ~y_true & (y_pred >= thresh), 1, 0)
+        tni = np.where( ~y_true & (y_pred < thresh), 1, 0)
+        fni = np.where( y_true & (y_pred < thresh), 1, 0)
 
-                    t = thresholds[label]
-                    is_label = gold[label]
+        tp = tpi.sum()
+        fp = fpi.sum()
+        tn = tni.sum()
+        fn = fni.sum()
 
-                    if score >= t and is_label:
-                        confusions[label]['tp'] += 1.
-                    elif score >= t and is_label:
-                        confusions[label]['fp'] += 1.
-                    elif score < t and is_label:
-                        confusions[label]['tn'] += 1
-                    elif score < t and is_label:
-                        confusions[label]['fn'] += 1
+        M = {'tp':tp, 'fp':fp, 'tn':tn, 'fn': fn}
+        return M
 
-            for label in confusions:
-                M = confusions[label]
-                print('Scores for: {}'.format(label))
+    def evaluate_confusion(self, test_data):
+        thresholds = {'left':0.5, 'right':0.5}
+        texts, label_dicts = zip(*test_data)
+        cat_dicts = [label_dict['cats'] for label_dict in label_dicts]
+        scores = self.score_texts(texts)
 
-                tp, fp, tn, fn = M['tp'], M['fp'], M['tn'], M['fn']
+        for label in thresholds:
+            label_scores = np.array([score[label] for score in scores])
+            real_labels = np.array([label_dict[label] for label_dict in cat_dicts])
+            thresh = thresholds[label]
 
-                precision = tp / (tp + fp)
-                recall = tp / (tp + fn)
-                f_score = 2 * (precision * recall) / (precision + recall)
-
-                print('{:^5}\t{:^5}\t{:^5}'.format('P', 'R', 'F'))
-                print('{0:.3f}\t{1:.3f}\t{2:.3f}'.format(precision, recall, f_score))
-
-            return confusions
+            M = eval_utils.build_confusion(real_labels, label_scores, thresh)
+            eval_utils.print_confusion_report(M, label)
 
 
     def save(self, out_name=None):
@@ -148,35 +155,32 @@ class Model:
 
 
 @plac.annotations(
-    data_name=("Dataframe name", "option", 'd'),
-    model_name=("Where to find the model", "option", 'm'),
-    out_name=("where to save the model", 'option', 'o'),
-    reset_model=("Reset model found in model_loc", "flag", "r"),
-    evaluate_only=('Dont train on data, just evaluate', 'flag','ev'),
-    train_all=('Dont split data, train on full set', 'flag', 'tr'),
-    resampling=('Type of resampling to use [over, under, none]', 'option', 'rs'),
-    dropout=("Dropout rate to use", 'option', 'do'),
-    epochs=("Training epochs", 'option', 'ep'),
-    learning_rate=('NN learning rate', 'option', 'lr'),
-    quiet=('Dont print all over everything','flag','q')
+    data_name=("Dataframe name", "option", 'd', str),
+    model_name=("Where to find the model", "option", 'm', str),
+    out_name=("where to save the model", 'option', 'o', str),
+    reset_model=("Reset model found in model_loc", "flag", "r", bool),
+    evaluate_only=('Dont train on data, just evaluate', 'flag','ev', str),
+    train_all=('Dont split data, train on full set', 'flag', 'tr', bool),
+    resampling=('Type of resampling to use [over, under, none]', 'option', 'rs', str),
+    dropout=("Dropout rate to use", 'option', 'do', float),
+    epochs=("Training epochs", 'option', 'ep', int),
+    quiet=('Dont print all over everything','flag','q', bool)
 )
 def main(   data_name='articles.pkl',
             model_name='spacy_clf',
-            out_name='spacy_clf',
+            out_name=None,
             reset_model=False,
             evaluate_only=False,
             train_all=False,
             resampling='over',
             dropout=0.5,
             epochs=1,
-            learning_rate=0.001,
             quiet=False):
 
     #ipdb.set_trace()
 
     kwargs = {'evaluate_only':evaluate_only,'train_all':train_all,'resampling':resampling,
-                'dropout':dropout, 'epochs':epochs,'learning_rate':learning_rate,
-                'verbose': not quiet}
+                'dropout':dropout, 'epochs':epochs, 'verbose': not quiet}
 
     model = Model(model_name, reset_model)
 

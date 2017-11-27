@@ -35,14 +35,14 @@ def load_dfs():
     hp_df['date']= hp_df.date.apply( lambda date: dt.strftime(date, '%Y-%m-%d'))
     reu_df['date']= reu_df.date.apply( lambda date: dt.strftime(date, '%Y-%m-%d'))
 
-    # create bias metric, -1 = left, 0 = center, 1 = right
-    od_df['bias'] = -1;     od_df['orient'] = 'left';
-    mj_df['bias'] = -1;     mj_df['orient'] = 'left';
-    hp_df['bias'] = -0.5;   hp_df['orient'] = 'left'
+    # create bias metric
+    od_df['bias'] = 1;     od_df['orient'] = 'left';
+    mj_df['bias'] = 1;     mj_df['orient'] = 'left';
+    hp_df['bias'] = 0.5;   hp_df['orient'] = 'left'
     reu_df['bias'] = 0;     reu_df['orient']= 'center'
     fox_df['bias'] = 0.5;   fox_df['orient']= 'right'
     bb_df['bias'] = 1;      bb_df['orient'] = 'right'
-    ads_df['bias'] = np.where( ads_df.supports=='Donald Trump', 1, -1 )
+    ads_df['bias'] = 1
     ads_df['orient'] = np.where( ads_df.supports=='Donald Trump', 'right', 'left' )
 
 
@@ -60,7 +60,7 @@ def load_holdout():
     ai_df = zutils.open_as_df('ai')     #addicting info
     gp_df = zutils.open_as_df('gp')     #the gateway pundit
 
-    ai_df['bias'] = -1;     ai_df['orient']= 'left';
+    ai_df['bias'] = 1;     ai_df['orient']= 'left';
     gp_df['bias'] = 1;      gp_df['orient']= 'right';
 
     dfs = {'ai':ai_df, 'gp':gp_df}
@@ -74,7 +74,7 @@ def load_reddit():
     neutral_df = zutils.open_as_df('neutral_reddit')
 
 
-    left_df['bias'] = -1;   left_df['orient'] = 'left'
+    left_df['bias'] = 1;   left_df['orient'] = 'left'
     right_df['bias']= 1;    right_df['orient'] = 'right'
     neutral_df['bias']=0;   neutral_df['orient']='center'
 
