@@ -12,6 +12,11 @@ This process can be automated by mapping the web via twitter shares:
 
 ![](https://thesocietypages.org/socimages/files/2017/09/4.png "Twitter Partisan map")
 
+
+<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">We should have a contest as to which of the Networks, plus CNN and not including Fox, is the most dishonest, corrupt and/or distorted in its political coverage of your favorite President (me). They are all bad. Winner to receive the FAKE NEWS TROPHY!</p>&mdash; Donald J. Trump (@realDonaldTrump) <a href="https://twitter.com/realDonaldTrump/status/935147410472480769?ref_src=twsrc%5Etfw">November 27, 2017</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
 ![Even Donald Trump cares](https://github.com/zachary-britt/text2slant/blob/master/figures/Screenshot%20from%202017-11-28%2013-00-44.png "Trump Cares")
 
 My goal is to tackle this by reading the text itself. 
