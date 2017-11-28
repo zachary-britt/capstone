@@ -18,5 +18,48 @@ source ~/.bashrc
 # python spacy_textcat.py -d articles.pkl -m spacy_2.2 -o spacy_2.3 -rs over \
 #   -ep 2
 #python spacy_textcat.py -d reddit.pkl -m spacy_2.3 -o spacy_2.4 -rs none
-python spacy_textcat.py -d articles.pkl -m spacy_2.5 -o spacy_2.5 -rs under \
-    -tr -minb 64.0 -maxb 256.0
+# python spacy_textcat.py -d articles.pkl -m spacy_2.5 -o spacy_2.5 -rs under \
+    # -tr -minb 64.0 -maxb 256.0
+#
+
+python spacy_textcat.py -d articles.pkl -m spacy-3.a -o spacy-3.a -CVI 2000 -rs under \
+    -minb 4.0 -maxb 64.0
+
+python spacy_textcat.py -d articles.pkl -m spacy-3.a -o spacy-3.aa -CVI 2000 -rs over \
+    -minb 32.0 -maxb 64.0
+
+python spacy_textcat.py -d reddit.pkl -m spacy-3.aa -o spacy-3.aar -CVI 2000 -rs none \
+    -minb 32.0 -maxb 64.0
+
+python spacy_textcat.py -d articles.pkl -m spacy-3.aar -o spacy-3.aaara -CVI 2000 -rs under \
+    -minb 32.0 -maxb 64.0
+
+
+
+python spacy_textcat.py -d reddit.pkl -m spacy-4.r -o spacy-4.r -CVI 2000 -rs none \
+    -minb 4.0 -maxb 64.0
+
+python spacy_textcat.py -d articles.pkl -m spacy-4.r -o spacy-4.ra -CVI 2000 -rs under \
+    -minb 32.0 -maxb 64.0
+
+python spacy_textcat.py -d articles.pkl -m spacy-4.ra -o spacy-4.raaaa -CVI 2000 -rs over \
+    -minb 64.0 -maxb 64.0 -ep 3
+
+
+
+python spacy_textcat.py -d articles.pkl -m spacy-5.a10 -CVI 2000 -rs over \
+    -minb 4.0 -maxb 64.0 -ep 10
+
+
+
+python spacy_textcat.py -d articles.pkl -m spacy-6.a -CVI 2000 -rs over \
+    -minb 4.0 -maxb 64.0 -ep 2 -do 0.6
+
+python spacy_textcat.py -d articles.pkl -m spacy-6.a -o spacy-6.aa -CVI 2000 -rs over \
+    -minb 4.0 -maxb 64.0 -ep 2 -do 0.4
+
+python spacy_textcat.py -d articles.pkl -m spacy-6.aa -o spacy-6.aaa -CVI 2000 -rs over \
+    -minb 4.0 -maxb 64.0 -ep 2 -do 0.2
+
+python spacy_textcat.py -d articles.pkl -m spacy-6.aaa -o spacy-6.aaaa -CVI 2000 -rs over \
+    -minb 4.0 -maxb 64.0 -ep 2 -do 0.1

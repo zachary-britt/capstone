@@ -159,9 +159,7 @@ def resampler(y, resampling_type):
 
 ''' MAIN DATA LOADER '''
 
-def load_and_configure_data(data_name='articles.pkl', label_type='cats', verbose=True,
-                            test_data=False, test_size=0.2, labels=['left','right'],
-                            get_dates=False, space_zip=True, resampling='over'):
+def load_and_configure_data(data_name='articles.pkl', **kwargs):
     '''
     Prep formatted dataframe for training or testing
 
@@ -170,19 +168,30 @@ def load_and_configure_data(data_name='articles.pkl', label_type='cats', verbose
         -(data points added after tagging get put in training set)
         -default test_size=True
 
-    If prepping test_samples, set test_data=True
+    If prepping test_samples, set test_all=True
 
-    Performs resampling ['over','']
+    Performs resampling ['over','under','none']
 
     Configures labels as: ['string','one_hot', or 'dict']
     '''
+    label_type = kwargs.get('label_type', 'cats')
+    verbose = kwargs.get('verbose',True)
+    test_all = kwargs.get('test_all')
+    train_all= kwargs.get('train_all')
+    labels = kwargs.get('labels',['left','right'])
+    get_dates=kwargs.get('dates')
+    space_zip = kwargs.get('space_zip', True)
+    resampling = kwargs.get('resampling', 'over')
 
-    if test_data:
-        return load_and_configure_test_data_(data_name, label_type, verbose,
+
+    test_size = kwargs.get('test_size',0.05),
+    if test_all:
+        return load_and_configure_test_data(data_name, label_type, verbose,
                                             labels, get_dates, space_zip)
+    if train_all:
+        test_size=0
 
     data_loc = DATA_PATH + data_name
-
     df = pd.read_pickle(data_loc)
 
     if test_size:
@@ -246,7 +255,6 @@ def load_and_configure_data(data_name='articles.pkl', label_type='cats', verbose
         train_data = zip_for_spacy(*train_data)
         test_data = zip_for_spacy(*test_data)
 
-
     return {'train':train_data, 'test':test_data}
 
 
@@ -274,7 +282,7 @@ def peek_tagger(df, tag_loc, peek_size=250, get_peek=False):
     test_inds = np.setdiff1d(all_inds, peek_inds, assume_unique=True)
 
     if get_peek:
-        np.random.shuffle(peek_inds)
+        peek_inds.sort()
         return peek_inds
     else:
         np.random.shuffle(test_inds)
@@ -309,7 +317,7 @@ def load_peek_set(data_name='holdout.pkl',label_type='cats', verbose=True,
     if space_zip:
         return_vals = zip_for_spacy(X,y,D)
 
-    return {'test':return_vals}
+    return return_vals
 
 
 def load_and_configure_test_data(data_name='holdout.pkl', label_type='cats', verbose=True,
@@ -372,6 +380,7 @@ class ProgressBar:
         self.title = title
         self.start_time = time.time()
         self.processor = Pool(1)
+        print('\nPROGRESS')
         self.progress(0)
         self.n=0
 
@@ -383,9 +392,9 @@ class ProgressBar:
         self.progress(self.n, other)
 
     def kill(self, other=''):
-        seconds = int(time.time() - self.start_time)
-        minutes = int(seconds / 60)
-        seconds = seconds % 60
+        seconds_dur = int(time.time() - self.start_time)
+        minutes = int(seconds_dur / 60)
+        seconds = seconds_dur % 60
         if minutes:
             time_str = '{:2}:{:2}'.format(minutes,seconds)
         else:
@@ -395,7 +404,7 @@ class ProgressBar:
         sys.stdout.flush()
         self.processor.close()
         self.processor.join()
-
+        return seconds_dur
 
 if __name__ == '__main__':
 
