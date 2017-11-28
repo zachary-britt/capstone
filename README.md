@@ -12,8 +12,12 @@ This process can be automated by mapping the web via twitter shares:
 
 ![](https://thesocietypages.org/socimages/files/2017/09/4.png "Twitter Partisan map")
 
+![Even Donald Trump cares](https://github.com/zachary-britt/text2slant/blob/master/figures/Screenshot%20from%202017-11-28%2013-00-44.png "Trump Cares")
 
 My goal is to tackle this by reading the text itself. 
+
+
+
 
 ### Web-scraping
 
