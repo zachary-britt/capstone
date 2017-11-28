@@ -505,6 +505,13 @@ def main(out_dir=DATA_PATH):
 
     print("Cleaned articles, you've got {} of them".format(df.shape[0]))
 
+    dfs.pop('reu')
+    dfnc = pd.concat( list(dfs.values()), ignore_index=True )
+    dfnc.to_pickle(out_dir+'articles_no_center.pkl')
+
+    print("Cleaned articles no center, you've got {} of them".format(dfnc.shape[0]))
+
+
     '''Reddit dfs'''
     rdf = dl.load_reddit()
     rdf = universal_cleaner(rdf)
@@ -514,6 +521,14 @@ def main(out_dir=DATA_PATH):
 
     print("Cleaned reddit comments, you've got {} of them".format(rdf.shape[0]))
 
+
+    rdf = pd.read_pickle('../data/reddit.pkl')
+    '''Reddit dfs no center'''
+    rncdf = rdf[rdf.bias != 0]
+    rncdf.reset_index(inplace=True)
+    rncdf.to_pickle(out_dir+'reddit_no_center.pkl')
+
+    print("Cleaned reddit no center comments, you've got {} of them".format(rncdf.shape[0]))
 
 
 
@@ -530,9 +545,6 @@ def main(out_dir=DATA_PATH):
     print("Cleaned holdout articles, you've got {} of them".format(hdf.shape[0]))
 
 
-
-
-    return df, rdf, hdf
 
 if __name__ == '__main__':
     plac.call(main)

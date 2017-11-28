@@ -22,44 +22,81 @@ source ~/.bashrc
     # -tr -minb 64.0 -maxb 256.0
 #
 
-python spacy_textcat.py -d articles.pkl -m spacy-3.a -o spacy-3.a -CVI 2000 -rs under \
-    -minb 4.0 -maxb 64.0
+# python spacy_textcat.py -d articles.pkl -m spacy-3.a -o spacy-3.a -CVI 2000 -rs under \
+#     -minb 4.0 -maxb 64.0
+#
+# python spacy_textcat.py -d articles.pkl -m spacy-3.a -o spacy-3.aa -CVI 2000 -rs over \
+#     -minb 32.0 -maxb 64.0
+#
+# python spacy_textcat.py -d reddit.pkl -m spacy-3.aa -o spacy-3.aar -CVI 2000 -rs none \
+#     -minb 32.0 -maxb 64.0
+#
+# python spacy_textcat.py -d articles.pkl -m spacy-3.aar -o spacy-3.aaara -CVI 2000 -rs under \
+#     -minb 32.0 -maxb 64.0
+#
+#
+#
+# python spacy_textcat.py -d reddit.pkl -m spacy-4.r -o spacy-4.r -CVI 2000 -rs none \
+#     -minb 4.0 -maxb 64.0
+#
+# python spacy_textcat.py -d articles.pkl -m spacy-4.r -o spacy-4.ra -CVI 2000 -rs under \
+#     -minb 32.0 -maxb 64.0
+#
+# python spacy_textcat.py -d articles.pkl -m spacy-4.ra -o spacy-4.raaaa -CVI 2000 -rs over \
+#     -minb 64.0 -maxb 64.0 -ep 3
+#
+#
+#
+# python spacy_textcat.py -d articles.pkl -m spacy-5.a10 -CVI 2000 -rs over \
+#     -minb 4.0 -maxb 64.0 -ep 10
+#
+#
+#
+# python spacy_textcat.py -d articles.pkl -m spacy-6.a -CVI 2000 -rs over \
+#     -minb 4.0 -maxb 64.0 -ep 2 -do 0.6
+#
+# python spacy_textcat.py -d articles.pkl -m spacy-6.a -o spacy-6.aa -CVI 2000 -rs over \
+#     -minb 4.0 -maxb 64.0 -ep 2 -do 0.4
+#
+# python spacy_textcat.py -d articles.pkl -m spacy-6.aa -o spacy-6.aaa -CVI 2000 -rs over \
+#     -minb 4.0 -maxb 64.0 -ep 2 -do 0.2
+#
+# python spacy_textcat.py -d articles.pkl -m spacy-6.aaa -o spacy-6.aaaa -CVI 2000 -rs over \
+#     -minb 4.0 -maxb 64.0 -ep 2 -do 0.1
 
-python spacy_textcat.py -d articles.pkl -m spacy-3.a -o spacy-3.aa -CVI 2000 -rs over \
-    -minb 32.0 -maxb 64.0
+python spacy_textcat.py -d articles_no_center.pkl -m spacy-7.a -o spacy-7.a -CVI 2000 -rs over \
+    -minb 4.0 -maxb 64.0 -ep 2 -do 0.7
 
-python spacy_textcat.py -d reddit.pkl -m spacy-3.aa -o spacy-3.aar -CVI 2000 -rs none \
-    -minb 32.0 -maxb 64.0
-
-python spacy_textcat.py -d articles.pkl -m spacy-3.aar -o spacy-3.aaara -CVI 2000 -rs under \
-    -minb 32.0 -maxb 64.0
-
-
-
-python spacy_textcat.py -d reddit.pkl -m spacy-4.r -o spacy-4.r -CVI 2000 -rs none \
-    -minb 4.0 -maxb 64.0
-
-python spacy_textcat.py -d articles.pkl -m spacy-4.r -o spacy-4.ra -CVI 2000 -rs under \
-    -minb 32.0 -maxb 64.0
-
-python spacy_textcat.py -d articles.pkl -m spacy-4.ra -o spacy-4.raaaa -CVI 2000 -rs over \
-    -minb 64.0 -maxb 64.0 -ep 3
-
-
-
-python spacy_textcat.py -d articles.pkl -m spacy-5.a10 -CVI 2000 -rs over \
-    -minb 4.0 -maxb 64.0 -ep 10
-
-
-
-python spacy_textcat.py -d articles.pkl -m spacy-6.a -CVI 2000 -rs over \
+python spacy_textcat.py -d articles_no_center.pkl -m spacy-7.a -o spacy-7.aa -CVI 2000 -rs over \
     -minb 4.0 -maxb 64.0 -ep 2 -do 0.6
 
-python spacy_textcat.py -d articles.pkl -m spacy-6.a -o spacy-6.aa -CVI 2000 -rs over \
+python spacy_textcat.py -d articles_no_center.pkl -m spacy-7.aa -o spacy-7.aaa -CVI 2000 -rs over \
+    -minb 4.0 -maxb 64.0 -ep 2 -do 0.5
+
+python spacy_textcat.py -d articles_no_center.pkl -m spacy-7.aaa -o spacy-7.aaaa -CVI 2000 -rs over \
     -minb 4.0 -maxb 64.0 -ep 2 -do 0.4
 
-python spacy_textcat.py -d articles.pkl -m spacy-6.aa -o spacy-6.aaa -CVI 2000 -rs over \
-    -minb 4.0 -maxb 64.0 -ep 2 -do 0.2
 
-python spacy_textcat.py -d articles.pkl -m spacy-6.aaa -o spacy-6.aaaa -CVI 2000 -rs over \
-    -minb 4.0 -maxb 64.0 -ep 2 -do 0.1
+python spacy_textcat.py -d articles_no_center.pkl -m spacy-8.a -o spacy-8.a -CVI 2000 -rs over \
+    -minb 4.0 -maxb 64.0 -ep 2 -do 0.6
+
+python spacy_textcat.py -d reddit_no_center.pkl -m spacy-8.a -o spacy-8.ar -CVI 2000 -rs choose_n \
+    -maxN 4000 -minb 4.0 -maxb 64.0 -ep 1 -do 0.6
+
+python spacy_textcat.py -d articles_no_center.pkl -m spacy-8.ar -o spacy-8.ara -CVI 2000 -rs over \
+    -minb 4.0 -maxb 64.0 -ep 4 -do 0.5
+
+python spacy_textcat.py -d reddit_no_center.pkl -m spacy-8.ara -o spacy-8.arar -CVI 2000 -rs choose_n \
+    -maxN 6000 -minb 4.0 -maxb 64.0 -ep 1 -do 0.6
+
+python spacy_textcat.py -d articles_no_center.pkl -m spacy-8.arar -o spacy-8.arara -CVI 2000 -rs over \
+    -minb 4.0 -maxb 64.0 -ep 8 -do 0.5
+
+
+
+
+
+
+
+
+#

@@ -86,5 +86,21 @@ def load_reddit():
     return df
 
 
+def load_reddit_no_center():
+    from dateutil import tz
+
+    left_df = zutils.open_as_df('left_reddit')
+    right_df = zutils.open_as_df('right_reddit')
+
+    left_df['bias'] = 1;   left_df['orient'] = 'left'
+    right_df['bias']= 1;    right_df['orient'] = 'right'
+
+    df = pd.concat([left_df,right_df], ignore_index=True)
+    drops = ['author','score','subreddit']
+    df.drop(drops, axis=1, inplace=True)
+    df.rename(columns={'body':'content','created_utc':'date'}, inplace=True)
+    return df
+
+
 if __name__ == '__main__':
     dfs = load_dfs()

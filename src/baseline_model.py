@@ -1,103 +1,125 @@
 from sklearn.feature_extraction.text import TfidfVectorizer as Tfidf
 from sklearn.naive_bayes import MultinomialNB as MNB
-from sklearn.pipeline import make_pipeline
+from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split, cross_val_predict
 from pprint import pprint
 from sklearn.metrics import classification_report
 from sklearn.metrics.pairwise import cosine_similarity as cs
 import numpy as np
 import plac
+import ipdb
 import os
 DATA_PATH = os.environ['DATA_PATH']
 
 import zutils
 
-def baseline_data_load_and_cfg(val_cfg=True):
 
-    data_cfg = {
-        'label_type':   'one_hot',
-        'train_all':    True,
-        'zipit':        False,
-        'resampling':   'over'
-    }
-    art_data = zutils.load_and_configure_data('articles.pkl', **data_cfg)['train']
+class BaselineCLF:
+    def __init__(self, **cfg):
+        self.labels = cfg.get('labels',['left','right'])
+        self.clf = {label: self._make_tfidf_NB_clf(**cfg) for label in self.labels}
 
-    data_cfg['resampling':'under']
-    reddit_data = zutils.load_and_configure_data('reddit.pkl', **data_cfg)['train']
-    data['train'] = art_data.extend(reddit_data)
+    def _make_tfidf_NB_clf(self, **cfg):
+        max_f = cfg.get('max_features',1200)
+        max_df= cfg.get('max_df',0.7)
+        sublin = cfg.get('sublin',True)
+        vectorizer = Tfidf(stop_words='english', norm='l2', max_df=max_df,
+                            max_features=max_f, sublinear_tf=sublin)
+        model = MNB()
+        clf = Pipeline( steps=[('v',vectorizer), ('nb',model) ])
+        return clf
 
-    data_cfg['peek']=val_cfg
-    data['test'] = zutils.load_and_configure_data('holdout.pkl', **data_cfg)['test']
+    # def _data_cfg(self, data):
+    #     X,y = zip(*data)
+    #     X = np.array(X)
+    #     y = np.vstack(y)
+    #     return (X,y)
 
-    return data
+    def _baseline_data_load_and_cfg(self, **cfg):
+        data_cfg = {
+            'label_type':   'one_hot',
+            'train_all':    True,
+            'zipit':        True,
+            'resampling':   'over'
+        }
+        cfg.update(data_cfg)
 
+        if cfg.get('no_center'):    art_name = 'articles_no_center.pkl'
+        else:                       art_name = 'articles.pkl'
 
-def make_vectorizer():
-    vectorizer = Tfidf(stop_words='english', norm='l2', max_df=0.7,
-                        max_features=12000, sublinear_tf=True)
-    return vectorizer
+        training_data = zutils.load_and_configure_data(art_name, **cfg)['train']
+        class_weights = np.ones(len(training_data))
 
-def tfidf_NB_baseline(X, y):
-    vectorizer = make_vectorizer()
-    model = MNB()
-    clf = make_pipeline(vectorizer, model)
+        if cfg.get('use_reddit'):
+            cfg['resampling']='choose_n'
+            cfg['max_class_size']=10000
 
-    y_p = cross_val_predict( clf, X, y, cv=3, n_jobs=4 )
-    pprint( classification_report(y, y_p) )
+            if cfg.get('no_center'):    red_name = 'reddit_no_center.pkl'
+            else:                       red_name = 'reddit.pkl'
 
+            reddit_data = zutils.load_and_configure_data(red_name, **cfg)['train']
+            training_data.extend(reddit_data)
+            reddit_weight = cfg.get('reddit_weight',0.2)
+            class_weights = np.hstack([class_weights, reddit_weight*np.ones(len(reddit_data))])
+        # training_data = self._data_cfg(training_data)
 
-def cos_sim(X, y):
+        peek = cfg.get('peek_cfg')
+        testing_data = zutils.load_and_configure_data('holdout.pkl', peek=peek , **cfg)['test']
+        # testing_data = self._data_cfg(testing_data)
 
-    vectorizer = make_vectorizer()
+        data = {'train':training_data, 'test':testing_data, 'weights':class_weights}
 
-    fox_inds = np.argwhere(y == 'right').ravel()
-    hp_inds = np.argwhere(y == 'left').ravel()
-    reu_inds = np.argwhere(y == 'center').ravel()
-
-    X_fox = X[fox_inds]
-    X_hp = X[hp_inds]
-    X_reu = X[reu_inds]
-
-    vectorizer.fit(X)
-    fox = vectorizer.transform(X_fox)
-    hp = vectorizer.transform(X_hp)
-    reu = vectorizer.transform(X_reu)
-
-    fox_n = fox.shape[0]
-    hp_n = hp.shape[0]
-    reu_n = reu.shape[0]
-
-    fox_self_sim = cs(fox)
-    hp_self_sim = cs(hp)
-    reu_self_sim = cs(reu)
-
-    fox_self_sim_score = (fox_self_sim.sum() - fox_n) / (fox_n * (fox_n -1))
-    hp_self_sim_score = (hp_self_sim.sum() - hp_n) / (hp_n * (hp_n -1))
-    reu_self_sim_score = (reu_self_sim.sum() - reu_n) / (reu_n * (reu_n -1))
-
-    print('fox self: {}'.format(fox_self_sim_score))
-    print('hp self: {}'.format(hp_self_sim_score))
-    print('reu self: {}'.format(reu_self_sim_score))
-
-    fox_hp_sim = cs(fox, hp)
-    fox_reu_sim = cs(fox, reu)
-    hp_reu_sim = cs(hp, reu)
-
-    fox_hp_sim_score = fox_hp_sim.sum() / (fox_n * hp_n)
-    fox_reu_sim_score = fox_reu_sim.sum() / (fox_n * reu_n)
-    hp_reu_sim_score = hp_reu_sim.sum() / (reu_n * hp_n)
-
-    print('fox and hp : {}'.format(fox_hp_sim_score))
-    print('fox and reu : {}'.format(fox_reu_sim_score))
-    print('hp and reu : {}'.format(hp_reu_sim_score))
+        return data
 
 
-def main(   train_data_loc=DATA_PATH+'articles.pkl',
-            test_data_loc=DATA_PATH+'holdout.pkl'):
+    def train(self, data=None, **cfg):
+        if data:
+            X_t, y_t = zip(*data['train'])
+            X_e, y_e = zip(*data['test'])
+            W = data.get('weights',None)
+        else:
+            data = self._baseline_data_load_and_cfg(**cfg)
+            X_t, y_t = zip(*data['train'])
+            X_e, y_e = zip(*data['test'])
+            W = data.get('weights',None)
 
-    X = df.content.values
-    d = df.date.values
-    y = df.bias.values
+        y_t = np.vstack(y_t)
+        y_e = np.vstack(y_e)
+
+
+        for i,label in enumerate(self.labels):
+            print("\n\n{} VS ALL".format(label.upper()))
+
+            y_t_1d = y_t[:,i]
+            y_e_1d = y_e[:,i]
+
+            self.clf[label].fit(X_t, y_t_1d, **{'nb__sample_weight':W})
+
+            y_train_preds = self.clf[label].predict(X_t)
+            y_test_pred = self.clf[label].predict(X_e)
+
+            train_report= classification_report(y_t_1d, y_train_preds, target_names=['not {}'.format(label),label])
+            test_report = classification_report(y_e_1d, y_test_pred, target_names=['not {}'.format(label),label])
+
+            print('\nTRAINING REPORT\n')
+            pprint(train_report)
+
+            #ipdb.set_trace()
+
+            print('\nTESTING REPORT\n')
+            pprint(test_report)
+
+
+
+
+def main():
+    cfg = { 'use_reddit':False,
+            'no_center':True,
+            'reddit_weight':0.2,
+            'peek_cfg':True
+            }
+    clf = BaselineCLF(**cfg)
+    clf.train(**cfg)
 
 
 if __name__ == '__main__':

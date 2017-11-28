@@ -21,6 +21,7 @@ class Model:
 
     def __init__(self, model_name, **kwargs):
         self.cfg = kwargs
+        self.cfg['catnest']=True
         model_dir = DATA_PATH + 'model_cache/' + model_name
         self.model_dir = Path(model_dir)
         self.labels = kwargs.get('labels',['left', 'right'])
@@ -74,7 +75,8 @@ class Model:
         data = zutils.load_and_configure_data(data_name, **self.cfg)
 
         if self.cont_val:
-            data.update(zutils.load_peek_set())
+            self.cfg['peek']=True
+            data.update(zutils.load_and_configure_data('holdout.pkl', **self.cfg))
 
         return data
 
@@ -195,13 +197,14 @@ class Model:
 
 
 @plac.annotations(
-    data_name=("Dataframe name", "option", 'd', str),
+    data_name=("Dataframe name"),
     model_name=("Where to find the model", "option", 'm', str),
     out_name=("where to save the model", 'option', 'o', str),
     reset=("Reset model found in model_loc", "flag", "r", bool),
     test_all=('Dont train on data, just evaluate', 'flag','ev', str),
     train_all=('Dont split data, train on full set', 'flag', 'tr', bool),
     resampling=('Type of resampling to use [over, under, none]', 'option', 'rs', str),
+    maxN=('max class size for choose N resampling', 'option', 'maxN', int),
     dropout=("Dropout rate to use", 'option', 'do', float),
     min_batch_size=("Minimum Batch size", 'option', "minb", float),
     max_batch_size=("Maximum Batch size", 'option', "maxb", float),
@@ -210,13 +213,14 @@ class Model:
     quiet=('Dont print all over everything','flag','q', bool),
     continuous_val_interval=('Validate every n samples seen', 'option', 'CVI', int)
 )
-def main(   data_name='articles.pkl',
+def main(   data_name,
             model_name='spacy_clf',
             out_name=None,
             reset=False,
             test_all=False,
             train_all=False,
             resampling='over',
+            maxN=6000,
             dropout=0.5,
             min_batch_size=4.,
             max_batch_size=64.,
@@ -230,7 +234,7 @@ def main(   data_name='articles.pkl',
                 'train_all':train_all,'resampling':resampling,'dropout':dropout,
                 'minb':min_batch_size,'maxb':max_batch_size, 'float_bias':float_bias,
                 'cont_val':continuous_val_interval,'epochs':epochs,'verbose': not quiet,
-                "zipit":True}
+                "zipit":True, 'max_class_size': maxN}
 
     model = Model(model_name, **kwargs)
 

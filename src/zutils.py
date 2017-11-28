@@ -101,13 +101,20 @@ def _tt_split_df(df, test_size, tag_loc):
     return df, t_inds, e_inds
 
 
-def _zipit(X, y_dict, D=None):
-    if D==None:
-        return list(zip(X, [{'cats': cats} for cats in y_dict]))
-    else:
-        return list(zip(X, D, [{'cats': cats} for cats in y_dict]))
+def _zipit(X, y_dict, D=None, **cfg):
 
-def _format_y(df, label_type='cats', labels=['left','right']):
+    if cfg.get('catnest'):
+        y_dict = [ {'cats':cats} for cats in y_dict ]
+
+    if D: zargs = [X, D, y_dict]
+    else: zargs = [X, y_dict]
+    return list(zip(*zargs))
+
+
+def _format_y(df, **cfg):
+
+    label_type = cfg.get('label_type','cats')
+    labels= cfg.get('labels',['left','right'])
 
     if label_type == 'cats':
         y = _make_cat_dict(df.orient, labels)
@@ -127,7 +134,12 @@ def _format_y(df, label_type='cats', labels=['left','right']):
     return y
 
 
-def _resampler(y, resampling_type):
+def _resampler(y, **cfg):
+    resampling_type=cfg.get('resampling')
+
+    if resampling_type == 'none' or not resampling_type:
+        return y.index.values
+
     raw_counts = y.value_counts()
     labels = raw_counts.index.values
     counts = Counter({label: raw_counts[label] for label in labels}).most_common()
@@ -148,12 +160,21 @@ def _resampler(y, resampling_type):
             over_inds = np.random.choice(label_inds, N-count)
             new_inds.extend(over_inds)
 
-    else:   #implicitly undersampling
+    elif resampling_type == 'under':
         N = label_counts[-1]    #size of smallest class
         for label, count in zip(label_order, label_counts):
             label_inds = y[y==label].index.values
             under_inds = np.random.choice(label_inds, N, replace=False)
             new_inds.extend(under_inds)
+
+    elif resampling_type == 'choose_n':
+        N = cfg.get('max_class_size')
+        if not N:
+            print("MUST SPECIFY 'max_class_size' for 'choose_n' resampling")
+        for label in label_order:
+            label_inds = y[y==label].index.values
+            choice_inds = np.random.choice(label_inds, N, replace=True)
+            new_inds.extend(choice_inds)
 
     new_inds = np.array(new_inds)
     np.random.shuffle(new_inds)
@@ -162,7 +183,7 @@ def _resampler(y, resampling_type):
 
 ''' MAIN DATA LOADER '''
 
-def load_and_configure_data(data_name, **kwargs):
+def load_and_configure_data(data_name, **cfg):
     '''
     Prep formatted dataframe for training or testing
 
@@ -209,28 +230,34 @@ def load_and_configure_data(data_name, **kwargs):
         'catbias'       |       {'left': 0, 'right': 0.5}
 
     '''
-    # load dataframe
-    data_loc = DATA_PATH + data_name
-    df = pd.read_pickle(data_loc)
+
+    # redirect:
+    # if only running evaluation, call test configurer
+    if cfg.get('test_all') or cfg.get('peek'):
+        return _load_and_configure_test_data(data_name, **cfg)
+
 
     # optional argument unpacking
-    label_type = kwargs.get('label_type', 'cats')
-    verbose = kwargs.get('verbose',True)
-    test_size = kwargs.get('test_size',0.05)
-    test_all = kwargs.get('test_all')
-    train_all= kwargs.get('train_all')
-    labels = kwargs.get('labels',['left','right'])
-    get_dates=kwargs.get('dates')
-    zipit = kwargs.get('zipit', True)
-    resampling = kwargs.get('resampling', 'over')
+    label_type = cfg.get('label_type', 'cats')
+    verbose = cfg.get('verbose',True)
+    test_size = cfg.get('test_size',0.05)
+    test_all = cfg.get('test_all')
+    train_all= cfg.get('train_all')
+    labels = cfg.get('labels',['left','right'])
+    get_dates=cfg.get('dates')
+    zipit = cfg.get('zipit', True)
+    resampling = cfg.get('resampling', 'over')
 
-    # if only running evaluation, call test configurer
-    if kwargs.get('test_all') or kwargs.get('peek'):
-        return _load_and_configure_test_data(data_name, **kwargs)
 
     # if only running training, set test size to 0 to skip test set tagging setup
     if train_all:
         test_size=0
+
+
+    # load dataframe
+    data_loc = DATA_PATH + data_name
+    df = pd.read_pickle(data_loc)
+
 
     '''SETUP TEST TRAIN SPLIT'''
     if test_size:
@@ -271,9 +298,9 @@ def load_and_configure_data(data_name, **kwargs):
         pprint(y_e.value_counts())
         print()
 
-    if resampling == 'over' or resampling == 'under':
+    if resampling and resampling != 'none':
         if verbose: print('rebalancing classes via {}sampling'.format(resampling))
-        t_inds = _resampler(y_t, resampling)
+        t_inds = _resampler(y_t, **cfg)
         y_t = y_t[t_inds]
 
 
@@ -295,8 +322,8 @@ def load_and_configure_data(data_name, **kwargs):
         ''
 
     '''
-    y_t = _format_y(df.iloc[t_inds], label_type, labels)
-    y_e = _format_y(df.iloc[e_inds], label_type, labels)
+    y_t = _format_y(df.iloc[t_inds], **cfg)
+    y_e = _format_y(df.iloc[e_inds], **cfg)
 
     if verbose:
         print('\nFormatted ys as {}'.format(label_type))
@@ -321,8 +348,8 @@ def load_and_configure_data(data_name, **kwargs):
     '''
     if zipit:
         ''' zip features to labels '''
-        train_data = _zipit(*train_data)
-        test_data = _zipit(*test_data)
+        train_data = _zipit(*train_data, **cfg)
+        test_data = _zipit(*test_data, **cfg)
 
 
     return {'train':train_data, 'test':test_data}
@@ -359,14 +386,14 @@ def _peek_tagger(df, tag_loc, peek_size=250, get_peek=False):
         return test_inds
 
 
-def _load_peek_set(data_name, **kwargs):
+def _load_peek_set(data_name, **cfg):
 
     # optional argument unpacking
-    label_type = kwargs.get('label_type', 'cats')
-    verbose = kwargs.get('verbose',True)
-    labels = kwargs.get('labels',['left','right'])
-    get_dates=kwargs.get('dates')
-    zipit = kwargs.get('zipit', True)
+    label_type = cfg.get('label_type', 'cats')
+    verbose = cfg.get('verbose',True)
+    labels = cfg.get('labels',['left','right'])
+    get_dates=cfg.get('dates')
+    zipit = cfg.get('zipit', True)
 
 
     data_loc = DATA_PATH + data_name
@@ -384,7 +411,7 @@ def _load_peek_set(data_name, **kwargs):
     df = df.iloc[peek_inds]
 
     X = df.content.values
-    y = _format_y(df, label_type='cats')
+    y = _format_y(df, **cfg)
 
     test_data = [X, y]
 
@@ -393,25 +420,28 @@ def _load_peek_set(data_name, **kwargs):
         test_data.append(D)
 
     if zipit:
-        test_data = _zipit(*test_data)
+        test_data = _zipit(*test_data, **cfg)
 
     return {'test':test_data}
 
 
-def _load_and_configure_test_data(data_name, **kwargs):
+def _load_and_configure_test_data(data_name, **cfg):
+    #redirect
+    if cfg.get('peek'):
+        return _load_peek_set(data_name, **cfg)
+
+
     data_loc = DATA_PATH + data_name
     df = pd.read_pickle(data_loc)
 
     # optional argument unpacking
-    label_type = kwargs.get('label_type', 'cats')
-    verbose = kwargs.get('verbose',True)
-    peek = kwargs.get('peek')
-    labels = kwargs.get('labels',['left','right'])
-    get_dates=kwargs.get('dates')
-    zipit = kwargs.get('zipit', True)
+    label_type = cfg.get('label_type', 'cats')
+    verbose = cfg.get('verbose',True)
+    peek = cfg.get('peek')
+    labels = cfg.get('labels',['left','right'])
+    get_dates=cfg.get('dates')
+    zipit = cfg.get('zipit', True)
 
-    if peek:
-        return _load_peek_set(data_name, **kwargs)
 
     tag_loc = DATA_PATH + 'tag_dir/'+data_name[ :data_name.find('.')]+'_tags.npy'
     tag_loc = Path(tag_loc)
@@ -429,7 +459,7 @@ def _load_and_configure_test_data(data_name, **kwargs):
         test_data.append(D)
 
     if zipit:
-        return_vals = _zipit(*test_data)
+        return_vals = _zipit(*test_data, **cfg)
 
     return {'test':return_vals}
 
@@ -438,7 +468,7 @@ def _load_and_configure_test_data(data_name, **kwargs):
 ''' TERMINAL OUTPUT UTILS'''
 
 
-def _print_progress_asynch(title, total, x, start_time, other):
+def _print_progress_async(title, total, x, start_time, other):
     progress_frac = x/total
     duration = time.time() - start_time+ 0.001
     speed = progress_frac/duration + 0.001
@@ -449,13 +479,17 @@ def _print_progress_asynch(title, total, x, start_time, other):
         time_str = '{:2}:{:2}'.format(minutes,seconds)
     else:
         time_str = '{:2} s'.format(seconds)
+    time_str = 'eta: ' + time_str
 
     bar_progress = int(progress_frac * 30)
     x_len = len(str(x))
     padding = len(str(total)) - x_len
-    sys.stdout.write('\r' +title +": ["+ "=" * (bar_progress) + '>' + '-' * (30-bar_progress) + '] ' +
-                                    ' ' * padding + str(x) +' / ' + str(total) +
-                                    ', eta: ' + time_str + ', ' + other)
+
+    bar_str =  "["+ "=" * (bar_progress) + '>' + '-' * (30-bar_progress) + ']'
+    progress_count_str = str(x) +' / ' + str(total)
+
+    sys.stdout.write('\r' +title +": "+ bar_str + ' ' * padding + progress_count_str +
+                                    ', ' + time_str + ', ' + other)
     sys.stdout.flush()
 
 
@@ -471,13 +505,27 @@ class ProgressBar:
         self.n=0
 
     def progress(self, x, other=''):
-        self.processor.apply(_print_progress_asynch, (self.title, self.total, x, self.start_time, other))
+        self.n = x
+        self.processor.apply_async(_print_progress_async, (self.title, self.total, x, self.start_time, other))
 
     def increment(self, x=1, other=''):
         self.n += x
         self.progress(self.n, other)
 
     def kill(self, other=''):
+        self.processor.close()
+        self.processor.join()
+        x = self.n; total = self.total
+        progress_frac = x/total
+        bar_progress = int(progress_frac * 30)
+
+        bar_progress = int(progress_frac * 30)
+        x_len = len(str(x))
+        padding = len(str(total)) - x_len
+
+        bar_str =  "["+ "=" * (bar_progress) + '>' + '-' * (30-bar_progress) + ']'
+        progress_count_str = str(x) +' / ' + str(total)
+
         seconds_dur = int(time.time() - self.start_time)
         minutes = int(seconds_dur / 60)
         seconds = seconds_dur % 60
@@ -485,11 +533,10 @@ class ProgressBar:
             time_str = '{:2}:{:2}'.format(minutes,seconds)
         else:
             time_str = '{:2} s'.format(seconds)
-        sys.stdout.write('\r' +self.title +": ["+"=" * 31  + "] "+
-                        str(self.total) +' / ' + str(self.total) +'time: '+ time_str +", " +other+ "\n" )
+
+        sys.stdout.write('\r' +self.title +":" + bar_str+" " + progress_count_str
+                            +' time: '+ time_str +", " +other+ "\n" )
         sys.stdout.flush()
-        self.processor.close()
-        self.processor.join()
         return seconds_dur
 
 if __name__ == '__main__':

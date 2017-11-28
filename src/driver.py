@@ -8,17 +8,13 @@ import spacy_textcat
 
 
 def run_baseline_model():
+    baseline_model.main()
+
+def space_driver():
+    arg_sequence = [ {} ]
 
 
-    
 
 
 if __name__ == '__main__':
-
-
-
-    baseline_data_cfg
-
-
-    baseline_model.tfidf_NB_baseline(X, y)
-    baseline_model.cos_sim(X, y)
+    run_baseline_model()
