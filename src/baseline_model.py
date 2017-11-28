@@ -10,13 +10,34 @@ import plac
 import os
 DATA_PATH = os.environ['DATA_PATH']
 
+import zutils
+
+def baseline_data_load_and_cfg(val_cfg=True):
+
+    data_cfg = {
+        'label_type':   'one_hot',
+        'train_all':    True,
+        'zipit':        False,
+        'resampling':   'over'
+    }
+    art_data = zutils.load_and_configure_data('articles.pkl', **data_cfg)['train']
+
+    data_cfg['resampling':'under']
+    reddit_data = zutils.load_and_configure_data('reddit.pkl', **data_cfg)['train']
+    data['train'] = art_data.extend(reddit_data)
+
+    data_cfg['peek']=val_cfg
+    data['test'] = zutils.load_and_configure_data('holdout.pkl', **data_cfg)['test']
+
+    return data
+
+
 def make_vectorizer():
     vectorizer = Tfidf(stop_words='english', norm='l2', max_df=0.7,
                         max_features=12000, sublinear_tf=True)
     return vectorizer
 
 def tfidf_NB_baseline(X, y):
-
     vectorizer = make_vectorizer()
     model = MNB()
     clf = make_pipeline(vectorizer, model)
@@ -77,7 +98,7 @@ def main(   train_data_loc=DATA_PATH+'articles.pkl',
     X = df.content.values
     d = df.date.values
     y = df.bias.values
-    
+
 
 if __name__ == '__main__':
     plac.call(main)
