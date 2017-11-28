@@ -13,31 +13,54 @@ This process can be automated by mapping the web via twitter shares:
 ![](https://thesocietypages.org/socimages/files/2017/09/4.png "Twitter Partisan map")
 
 
-My goal is to tackle this by reading the text itself. For training data I used political news articles from Fox, the Huffington Post (HP), and Reuters over the past year. These were web scraped (see "src/scrapers/"). HP/Fox were chosen as they provide news coverage in a consistently partisan fashion for the left/right. While their journalistic styles differ, they conveniently mirror each other as partisan cheerleaders. As a neutral label I chose Reuters as they embody intensly unsentimental and unbiased news reporting.
-
-As a quick example, right now (2017-11-21) HP, Fox and Reuters each have a headline on net neutrality:
-
-	HP: In Major Win For Telecom Industry, FCC Announces Plans To Repeal Net Neutrality
-
-	Fox: FCC chairman moves to dismantle Obama net neutrality rules
-
-	Reu: FCC chief plans to ditch U.S. 'net neutrality' rules
-
-<br>
+My goal is to tackle this by reading the text itself. 
 
 ### Web-scraping
 
-<br>
+The first major component of the project was data collection.
+
+For training data I used political news articles from:
+
+1. Right wing outlets:
+	* Fox (fox) 
+	* Breitbart (bb)
+	* Trump election advertisements (ads)
+
+2. Left wing outlets
+	* the Huffington Post (hp)
+	* Mother Jones (mj)
+	* Occupy Democrats (od)
+	* Clinton election advertisements (ads)
+
+3. Neutral outlets
+	* Reuters (reu)
+
+I also scraped
+* Addicting Info (ai) (left)
+and
+* Gateway Pundit (gp) (right)
+
+but left them as a holdout set.
+
+
+These were tediously web scraped. See [src/scrapers/](https://github.com/zachary-britt/text2slant/tree/master/src/scrapers "scrapers"). HP, Fox and reuters were the original dataset, but they provide too little variation in their writing style. This allows a model to easily identify what "an HP" article looks like, without having to learn anything about political sentiment.
+
+By expanding the dataset with a distinct sources, the model can be leveraged into memorizing less and learning more. 
+
+To further generalize I also downloaded a year of reddit comments and partitioned them into left wing, right wing, and non-political subreddits. The comments were filtered for length and and high score to ensure that they both fit the ethos of their subreddit and are long enough that they make sense out of context. 
+
+All of this data was saved to a mongo database for convenient storage.
 
 ### Pre-processing
 
-First the text is pre-processed and obfuscated  by removing sentences which clearly identify the source of the article. 
+The next component of the project was pre-processing the text in a way which removed any obvious "tells" as to the source of the article. The text is loaded from mongo into a pandas dataframe and then stripped of source consistent introductory/ending sentences 
 
 e.g.: 
 
 	"Chris Stirewalt is the politics editor for Fox News. Brianna McClelland contributed to this report. Want FOX News Halftime Report in your inbox every day? Sign up here." 
 	
-gets cut, along with other references to the news source. (replacing 'HuffPost' with 'this newspaper' and so on)
+gets cut, along with other references to the news source. (replacing 'Fox news' with 'this newspaper' and so on)
+
 
 <br>
 
@@ -68,6 +91,19 @@ By scrambling the dates and topics we lose a huge amount of valuable information
 <br>
 
 # Obsolete from here on
+
+
+As a quick example, right now (2017-11-21) HP, Fox and Reuters each have a headline on net neutrality:
+
+	HP: In Major Win For Telecom Industry, FCC Announces Plans To Repeal Net Neutrality
+
+	Fox: FCC chairman moves to dismantle Obama net neutrality rules
+
+	Reu: FCC chief plans to ditch U.S. 'net neutrality' rules
+
+
+<br>
+
 
 Next the text is chunked and annotated with scpaCy.
 
