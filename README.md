@@ -49,7 +49,9 @@ By expanding the dataset with a distinct sources, the model can be leveraged int
 
 To further generalize I also downloaded a year of reddit comments and partitioned them into left wing, right wing, and non-political subreddits. The comments were filtered for length and and high score to ensure that they both fit the ethos of their subreddit and are long enough that they make sense out of context. 
 
-All of this data was saved to a mongo database for convenient storage.
+The political comments are then filtered to include at least one recognized political keyword/name, while the non-political subreddits recieve the opposite of this filter. See [src/scrapers/database_cleaning](https://github.com/zachary-britt/text2slant/blob/master/src/scrapers/database_cleaning.py "cleaning")
+
+All of this data is saved to a mongo database for convenient storage.
 
 ### Pre-processing
 
@@ -61,8 +63,11 @@ e.g.:
 	
 gets cut, along with other references to the news source. (replacing 'Fox news' with 'this newspaper' and so on)
 
-
 <br>
+
+After links and strange introductory - conclusion punctuation are stripped, the text is checked to be at least 400 characters long to ensure the model isn't being punished for not understanding a short collection of sentence fragments.
+
+At this stage the reddit comments are similarily also stripped of links, and the comments from political subreddits are filtered 
 
 ### spaCy NLP
 
