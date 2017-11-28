@@ -74,12 +74,12 @@ class Model:
         data = zutils.load_and_configure_data(data_name, **self.cfg)
 
         if self.cont_val:
-            data['test'] = zutils.load_peek_set()
+            data.update(zutils.load_peek_set())
+
         return data
 
 
     def fit(self, data_name, **kwargs):
-        #ipdb.set_trace()
         self.cfg.update(kwargs)
         cont_val=self.cont_val
 
@@ -230,7 +230,7 @@ def main(   data_name='articles.pkl',
                 'train_all':train_all,'resampling':resampling,'dropout':dropout,
                 'minb':min_batch_size,'maxb':max_batch_size, 'float_bias':float_bias,
                 'cont_val':continuous_val_interval,'epochs':epochs,'verbose': not quiet,
-                "space_zip":True}
+                "zipit":True}
 
     model = Model(model_name, **kwargs)
 
