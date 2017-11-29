@@ -8,15 +8,7 @@ People can manually judge bias, but it inherantly involves subjective human asse
 
 ![](https://i.imgur.com/kP4Yax1.png "Partisan map")
 
-This process can be automated by mapping the web via twitter shares:
-
-![](https://thesocietypages.org/socimages/files/2017/09/4.png "Twitter Partisan map")
-
-
-![Trump also wants to know (not about Fox though)](https://github.com/zachary-britt/text2slant/blob/master/figures/Screenshot%20from%202017-11-28%2013-38-53.png)
-
 My goal is to tackle this by reading the text itself. 
-
 
 
 
@@ -66,13 +58,13 @@ e.g.:
 
 	"Chris Stirewalt is the politics editor for Fox News. Brianna McClelland contributed to this report. Want FOX News Halftime Report in your inbox every day? Sign up here." 
 	
-gets cut, along with other references to the news source. (replacing 'Fox news' with 'this newspaper' and so on)
+gets cut, along with other references to the news source. (replacing 'Fox news' with 'this newspaper' and so on) 
 
 <br>
 
 After links and strange introductory - conclusion punctuation are stripped, the text is checked to be at least 400 characters long to ensure the model isn't being punished for not understanding a short collection of sentence fragments.
 
-At this stage the reddit comments are similarily also stripped of links, and the comments from political subreddits are filtered 
+At this stage the reddit comments are similarily also stripped of links, and the comments from political subreddits are filtered for length. See [src/formatter](https://github.com/zachary-britt/text2slant/blob/master/src/formatter.py "formatting")
 
 ### spaCy NLP
 
@@ -82,15 +74,16 @@ With the text obfuscated we move on to processing the text in the spaCy NLP ecos
 
 ### Model training
 
-<br>
+[src/spacy_textcat](https://github.com/zachary-britt/text2slant/blob/master/src/spacy_textcat.py "textcat")
 
-### Model Performance on validation set
+[src/spacy_textcat](https://github.com/zachary-britt/text2slant/blob/master/src/runner_script
+ "textcat")
 
-<br>
 
-### Model Performance on articles from new sources
 
-<br>
+### Model Performance 
+
+
 
 ### Model next steps:
 
@@ -101,6 +94,15 @@ By scrambling the dates and topics we lose a huge amount of valuable information
 <br>
 
 # Obsolete from here on
+
+
+This process can be automated by mapping the web via twitter shares:
+
+![](https://thesocietypages.org/socimages/files/2017/09/4.png "Twitter Partisan map")
+
+
+![Trump also wants to know (not about Fox though)](https://github.com/zachary-britt/text2slant/blob/master/figures/Screenshot%20from%202017-11-28%2013-38-53.png)
+
 
 
 As a quick example, right now (2017-11-21) HP, Fox and Reuters each have a headline on net neutrality:
