@@ -70,6 +70,8 @@ At this stage the reddit comments are similarily also stripped of links, and the
 
 With the text obfuscated we move on to processing the text in the spaCy NLP ecosystem. Instead of relearning how to read from scratch
 
+https://spacy.io/usage/training#section-textcat
+
 <br>
 
 ### Model training
