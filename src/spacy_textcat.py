@@ -201,7 +201,7 @@ class Model:
     model_name=("Where to find the model", "option", 'm', str),
     out_name=("where to save the model", 'option', 'o', str),
     reset=("Reset model found in model_loc", "flag", "r", bool),
-    test_all=('Dont train on data, just evaluate', 'flag','ev', str),
+    test_all=('Dont train on data, just evaluate', 'flag','ev', bool),
     train_all=('Dont split data, train on full set', 'flag', 'tr', bool),
     resampling=('Type of resampling to use [over, under, none]', 'option', 'rs', str),
     maxN=('max class size for choose N resampling', 'option', 'maxN', int),
@@ -241,9 +241,34 @@ def main(   data_name,
     if not kwargs.get('test_all'):
         model.fit(data_name, **kwargs)
         model.save(out_name)
+        return None, None
     else:
-        return model.evaluate_confusion(data_name, **kwargs)
+        data = zutils.load_and_configure_data(data_name, **model.cfg)['test']
+        scores = model.evaluate_confusion(data)
+        #y_pred = model.predict_proba(zip(*data)[0])
+        return scores, data
 
 
 if __name__ == '__main__':
-    plac.call(main)
+    import matplotlib.pyplot as plt
+    scores, data = plac.call(main)
+    if scores:
+
+        text, y_true = zip(*data)
+        y_true = [y['cats'] for y in y_true]
+        r_true = np.array([y['right'] for y in y_true])
+        l_true = np.array([y['left'] for y in y_true])
+
+        r_pred = np.array([score['right'] for score in scores])
+        l_pred = np.array([score['left'] for score in scores])
+
+        with open('my_thing.pkl','wb') as f:
+            pickle.dump([r_true, l_true, r_pred, l_pred], f)
+
+        eval_utils.make_roc(r_true, r_pred, 'right')
+        eval_utils.make_roc(l_true, l_pred, 'left')
+
+        plt.show()
+
+
+        #

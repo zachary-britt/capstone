@@ -544,7 +544,14 @@ def main(out_dir=DATA_PATH):
 
     print("Cleaned holdout articles, you've got {} of them".format(hdf.shape[0]))
 
+    udf = dl.ultra_holdout()
+    udf.rename(columns={'contents':'content'}, inplace=True)
+    udf = universal_cleaner(udf)
+    udf = universal_stripper(udf)
+    udf = cull_shorts(udf)
+    udf.to_pickle(out_dir+'cnn.pkl')
 
+    print("Cleaned cnn, you have {} cnn articles, have fun".format(udf.shape[0]))
 
 if __name__ == '__main__':
     plac.call(main)

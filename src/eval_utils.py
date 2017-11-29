@@ -1,12 +1,12 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 import pickle
 import ipdb
 
 
-def make_roc(y_true, y_pred, label, N):
-    ipdb.set_trace()
+def make_roc(y_true, y_pred, label, N=None):
     inds = np.argsort(y_pred)
     y_pred = y_pred[inds]
     y_true = y_true[inds]
@@ -22,15 +22,25 @@ def make_roc(y_true, y_pred, label, N):
 
     #calc roc area (fun tiny integral calc)
     dx= fprs[1:] - fprs[:-1]
-    area = (tprs[1:] * dx).sum()
-    area_str = '{}: Area = {}'.format(label, area)
 
-    plt.plot(fprs, tprs, label=area_str)
-    plt.plot(threshes, threshes, '--', c='r' )
+    area = ((tprs[1:]+tprs[:-1])*0.5 * dx).sum()
+    area_str = '{}: Area = {:.3}'.format(label, area)
+
+    # return {'x':fprs, 'y': tprs, 'label':area_str, 'N':N}
+
+    if label=='left':   c = 'b'
+    else:               c = 'r'
+
+    plt.plot(fprs, tprs, label=area_str, c=c )
+    plt.plot(threshes, threshes, '--', c='g' )
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
+    if N:
+        plt.suptitle('ROC Curve after {} samples trained on'.format(N))
+    else:
+        plt.suptitle('ROC Curve')
     plt.legend()
-    plt.show()
+    #plt.show()
 
 
 
@@ -80,11 +90,45 @@ def print_confusion_report(M, name=None):
 
 
 def build_label_profile(y_true, y_preds, label, Ns):
-
     rocs = []
-    #for i, y_pred in enumerate(y_preds):
-    #    rocs.append( make_roc(y_true, y_pred, label, Ns[0]) )
-    make_roc(y_true, y_preds[0], label, Ns[0])
+    for i, y_pred in enumerate(y_preds):
+       rocs.append( make_roc(y_true, y_pred, label, Ns[i]) )
+    # make_roc(y_true, y_preds[0], label, Ns[0])
+    #build_animation(rocs)
+
+
+# def build_animation(rocs):
+#     fig, ax = plt.subplots()
+#     ln, = ax.plot([], [], 'b', animated=True)
+#     #ipdb.set_trace()
+#
+#     def init():
+#         ax.set_xlim(0, 1)
+#         ax.set_ylim(0, 1)
+#         return ln,
+#
+#     def update(roc):
+#         x = roc['x']
+#         y = roc['y']
+#         label = roc['label']
+#         # ln.set_data(x, y)
+#         # ln.set_label(label)
+#         #
+#         #fig.suptitle(roc['N'])
+#         ax.clear()
+#         ax.plot(x,y,c='b',label=label)
+#         ax.figure.suptitle('ROC after N={} samples seen'.format(roc['N']))
+#
+#         # plt.legend(bbox_to_anchor=(0.9, 1.0, 0.0, .10), loc=1,
+#         #     mode="expand", borderaxespad=0.)
+#
+#         plt.legend()
+#         return ax,
+#
+#     ani = FuncAnimation(fig, update, frames=iter(rocs), blit=True, init_func=init)
+#     plt.show()
+
+
 
 
 
@@ -103,18 +147,17 @@ def build_profile(model_name):
     l_scores_arr = np.array(l_scores_list)
     r_scores_arr = np.array(r_scores_list)
 
-    build_label_profile(y_true_left, l_scores_arr, 'left', Ns)
+    make_roc(y_true_left, l_scores_arr[-1], 'left', Ns[-1])
+    make_roc(y_true_right, r_scores_arr[-1], 'right', Ns[-1])
+    plt.show()
+
 
 if __name__ == '__main__':
 
-    model_names = ['spacy-3.aaara', 'spacy-4.raaaa', 'spacy-5.a10', 'spacy-6.aaaa',
-                        'spacy-7.aaaa', 'spacy-8.arar']
-
-    build_profile(model_names[0])
-
-
-
-
+    # model_names = ['spacy-3.aaara', 'spacy-4.raaaa', 'spacy-5.a10', 'spacy-6.aaaa',
+    #                     'spacy-7.aaaa', 'spacy-8.ara']
+    model_name = 'spacy-8.ara'
+    build_profile(model_name)
 
 
     #

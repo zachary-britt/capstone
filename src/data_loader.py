@@ -102,5 +102,10 @@ def load_reddit_no_center():
     return df
 
 
+def ultra_holdout():
+    cnn_df = zutils.open_as_df('cnn')
+    return cnn_df
+
+
 if __name__ == '__main__':
     dfs = load_dfs()

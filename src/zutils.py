@@ -448,9 +448,9 @@ def _load_and_configure_test_data(data_name, **cfg):
     if verbose: print('cutting peeked tags')
 
     test_inds = _peek_tagger(df, tag_loc)
-    df = df[test_inds]
+    df = df.iloc[test_inds]
     X = df.content.values
-    y = format_y(df, label_type, labels)
+    y = _format_y(df, **cfg)
 
     test_data = [X,y]
 
