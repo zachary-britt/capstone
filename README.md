@@ -19,28 +19,28 @@ The first major component of the project was data collection.
 For training data I used political news articles from:
 
 1. Right wing outlets:
-	* Fox (fox) 
-	* Breitbart (bb)
-	* Trump election advertisements (ads)
+	* Fox 
+	* Breitbart
+	* Trump election advertisements
 
 2. Left wing outlets
-	* the Huffington Post (hp)
-	* Mother Jones (mj)
-	* Occupy Democrats (od)
-	* Clinton election advertisements (ads)
+	* the Huffington Post
+	* Mother Jones
+	* Occupy Democrats
+	* Clinton election advertisements
 
 3. Neutral outlets
-	* Reuters (reu)
+	* Reuters
 
 I also scraped
-* Addicting Info (ai) (left)
+* Addicting Info (left)
 and
-* Gateway Pundit (gp) (right)
+* Gateway Pundit (right)
 
 but left them as a holdout set.
 
 
-These were tediously web scraped. See [src/scrapers/](https://github.com/zachary-britt/text2slant/tree/master/src/scrapers "scrapers"). HP, Fox and reuters were the original dataset, but they provide too little variation in their writing style. This allows a model to easily identify what "an HP" article looks like, without having to learn anything about political sentiment.
+These sources required customized web scraping [src/scrapers/](https://github.com/zachary-britt/text2slant/tree/master/src/scrapers "scrapers"). HP, Fox and reuters were the original dataset, but they provide too little variation in their writing style. This allows a model to easily identify what "an HP" article looks like, without having to learn anything about political sentiment.
 
 By expanding the dataset with a distinct sources, the model can be leveraged into memorizing less and learning more. 
 
@@ -49,6 +49,8 @@ To further generalize I also downloaded a year of reddit comments and partitione
 The political comments are then filtered to include at least one recognized political keyword/name, while the non-political subreddits recieve the opposite of this filter. See [src/scrapers/database_cleaning](https://github.com/zachary-britt/text2slant/blob/master/src/scrapers/database_cleaning.py "cleaning")
 
 All of this data is saved to a mongo database for convenient storage.
+
+(no story)
 
 ### Pre-processing
 
