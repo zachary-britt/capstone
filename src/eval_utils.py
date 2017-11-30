@@ -100,6 +100,17 @@ def build_label_profile(y_true, y_preds, label, Ns):
     # make_roc(y_true, y_preds[0], label, Ns[0])
     #build_animation(rocs)
 
+def score_average(texts, models):
+    scores_list = [model.score_texts(texts) for model in models]
+    scores_dfs = [pd.DataFrame(scores) for scores in scores_list]
+    scores_df = scores_dfs[0]
+    for next_score_df in scores_dfs[1:]:
+        scores_df['left'] = scores_df['left'] + next_score_df['left']
+        scores_df['right']=scores_df['right']+next_score_df['right']
+    scores_df['aleft'] = scores_df['left']/9
+    scores_df['aright']=scores_df['right']/9
+    return scores_df
+
 
 # def build_animation(rocs):
 #     fig, ax = plt.subplots()
