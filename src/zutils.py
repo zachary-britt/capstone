@@ -68,7 +68,7 @@ def _bi_dict(row, labels):
     return d
 
 def _make_catbias_dict(df, labels):
-    y = np.array(df.apply(bi_dict, axis=1, labels=labels))
+    y = np.array(df.apply(_bi_dict, axis=1, labels=labels))
     return y
 
 
@@ -360,11 +360,13 @@ def _peek_tagger(df, tag_loc, peek_size=250, get_peek=False):
     if not tag_loc.exists():
         l_inds = df[df.orient == 'left'].index.values
         r_inds = df[df.orient == 'right'].index.values
+        c_inds = df[df.orient == 'center'].index.values
 
         l_peek_inds = np.random.choice(l_inds, peek_size, replace=False)
         r_peek_inds = np.random.choice(r_inds, peek_size, replace=False)
+        c_peek_inds = np.random.choice(c_inds, peek_size, replace=False)
 
-        peek_inds = np.hstack([l_peek_inds, r_peek_inds])
+        peek_inds = np.hstack([l_peek_inds, r_peek_inds, c_peek_inds])
 
         # save tags
         tags = df.iloc[peek_inds]._id.values

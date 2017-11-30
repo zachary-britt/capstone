@@ -96,6 +96,8 @@ def table_grabber(table, field=None):
         yield cur.next()
 
 def table_to_list(table):
+    if type(table)==str:
+        table = open_database_collection(table)
     gen = table_grabber(table)
     return list(gen)
 

@@ -4,6 +4,7 @@ import zutils
 import pandas as pd
 import pickle
 from datetime import datetime as dt
+import dateutil.parser
 import ipdb
 import numpy as np
 
@@ -59,11 +60,23 @@ def load_dfs():
 def load_holdout():
     ai_df = zutils.open_as_df('ai')     #addicting info
     gp_df = zutils.open_as_df('gp')     #the gateway pundit
+    nyt_df = zutils.open_as_df('nyt')   #new york times
 
-    ai_df['bias'] = 1;     ai_df['orient']= 'left';
+    ai_df['bias'] = 1;      ai_df['orient']= 'left';
     gp_df['bias'] = 1;      gp_df['orient']= 'right';
+    nyt_df['bias']=0;       nyt_df['orient']='center';
 
-    dfs = {'ai':ai_df, 'gp':gp_df}
+    import bson
+
+    nyt_df['_id'] = nyt_df['_id'].apply(bson.ObjectId)
+    nyt_df['date'] = nyt_df['pub_date'].apply(lambda datestr: str(dateutil.parser.parse(datestr).date()))
+    nyt_df['title'] = nyt_df['headline'].apply(lambda x: x['main'])
+    nyt_df['link'] = nyt_df['web_url']
+
+    drops = ['headline','pub_date', 'new_desk', 'score', 'type_of_material', 'web_url']
+    nyt_df.drop(drops, axis=1, inplace=True)
+
+    dfs = {'ai':ai_df, 'gp':gp_df, 'nyt':nyt_df}
     return dfs
 
 def load_reddit():

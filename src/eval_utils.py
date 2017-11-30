@@ -28,8 +28,12 @@ def make_roc(y_true, y_pred, label, N=None):
 
     # return {'x':fprs, 'y': tprs, 'label':area_str, 'N':N}
 
-    if label=='left':   c = 'b'
-    else:               c = 'r'
+    if label=='left':
+        c = 'b'
+    elif label=='right':
+        c = 'r'
+    else:
+        c = 'p'
 
     plt.plot(fprs, tprs, label=area_str, c=c )
     plt.plot(threshes, threshes, '--', c='g' )

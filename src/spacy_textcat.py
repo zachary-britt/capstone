@@ -33,17 +33,15 @@ class Model:
 
 
     def setup_cont_val_logging(self):
+        cont_val_load_path = self.model_dir.joinpath('cont_val.pkl')
+        if cont_val_load_path.exists() and not self.cfg.get('reset'):
+            with open(cont_val_load_path, 'rb') as f:
+                [self.cont_val_log, self.epoch_names, self.cont_val_N] = pickle.load(f)
 
-        if self.cont_val:
-            cont_val_load_path = self.model_dir.joinpath('cont_val.pkl')
-            if cont_val_load_path.exists():
-                with open(cont_val_load_path, 'rb') as f:
-                    [self.cont_val_log, self.epoch_names, self.cont_val_N] = pickle.load(f)
-
-            else:
-                self.cont_val_log=[];
-                self.epoch_names = ''
-                self.cont_val_N = 0
+        else:
+            self.cont_val_log=[];
+            self.epoch_names = ''
+            self.cont_val_N = 0
 
 
     def open_nlp_with_text_cat_(self):
@@ -94,8 +92,8 @@ class Model:
 
         for i in range(self.cfg.get('epochs', 1)):
             seen = 0;
+            n = 0;
             if cont_val:
-                n = 0;
                 self.epoch_names += data_name[0]
 
             bar = zutils.ProgressBar('Epoch: {}'.format(i+1), len(train_data))
@@ -116,8 +114,8 @@ class Model:
                 loss_str = 'Avg Loss: {0:.3f}'.format(100*losses['textcat'] / seen)
                 bar.progress(seen, loss_str)
 
+                n += len(texts)
                 if cont_val:
-                    n += len(texts)
                     if n >= self.cont_val:
                         #ipdb.set_trace()
                         self.cont_val_N += self.cont_val; n = 0;
@@ -127,13 +125,23 @@ class Model:
 
                         bar = zutils.ProgressBar('Epoch: {}'.format(i+1), len(train_data))
                         bar.start_time -= t
-
-
+                else:
+                    if n >= 10000:
+                        n=0
+                        t = bar.kill(loss_str)
+                        with self.textcat.model.use_params(self.optimizer.averages):
+                            val_arr = np.array(val_data)
+                            inds = np.arange(val_arr.shape[0])
+                            mini_val_inds = np.random.choice(inds, 1000, replace=False)
+                            mini_val = val_arr[mini_val_inds].tolist()
+                            scores=self.evaluate_confusion(mini_val)
+                        bar = zutils.ProgressBar('Epoch: {}'.format(i+1), len(train_data))
+                        bar.start_time -= t
             bar.kill(loss_str)
             # end of epoch report
-            # if len(val_data.shape): #check val data not empty
-            #     with self.textcat.model.use_params(self.optimizer.averages):
-            #         scores = self.evaluate_confusion(val_data)
+            if len(val_data): #check val data not empty
+                with self.textcat.model.use_params(self.optimizer.averages):
+                    scores = self.evaluate_confusion(val_data)
 
 
     def score_texts(self, texts):
@@ -152,6 +160,7 @@ class Model:
         return scores
 
     def evaluate_confusion(self, test_data):
+        #ipdb.set_trace()
         thresholds = {'left':0.5, 'right':0.5}
         texts, label_dicts = zip(*test_data)
         cat_dicts = [label_dict['cats'] for label_dict in label_dicts]
@@ -200,7 +209,7 @@ class Model:
     data_name=("Dataframe name"),
     model_name=("Where to find the model", "option", 'm', str),
     out_name=("where to save the model", 'option', 'o', str),
-    reset=("Reset model found in model_loc", "flag", "r", bool),
+    reset=("Reset model found in model_loc", "flag", "rt", bool),
     test_all=('Dont train on data, just evaluate', 'flag','ev', bool),
     train_all=('Dont split data, train on full set', 'flag', 'tr', bool),
     resampling=('Type of resampling to use [over, under, none]', 'option', 'rs', str),
@@ -220,19 +229,23 @@ def main(   data_name,
             test_all=False,
             train_all=False,
             resampling='over',
-            maxN=6000,
-            dropout=0.5,
+            maxN=2000,
+            dropout=0.6,
             min_batch_size=4.,
-            max_batch_size=64.,
+            max_batch_size=16.,
             float_bias=False,
             epochs=1,
             quiet=False,
             continuous_val_interval=0):
 
+    if float_bias:
+        label_type = 'catbias'
+    else:
+        label_type = 'cats'
 
     kwargs = {  'out_name':out_name, 'reset':reset, 'test_all':test_all,
                 'train_all':train_all,'resampling':resampling,'dropout':dropout,
-                'minb':min_batch_size,'maxb':max_batch_size, 'float_bias':float_bias,
+                'minb':min_batch_size,'maxb':max_batch_size, 'label_type':label_type,
                 'cont_val':continuous_val_interval,'epochs':epochs,'verbose': not quiet,
                 "zipit":True, 'max_class_size': maxN}
 

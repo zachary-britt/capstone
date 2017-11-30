@@ -93,21 +93,61 @@ source ~/.bashrc
 #
 # python spacy_textcat.py articles_no_center.pkl -m spacy-8.arar -o spacy-8.arara -CVI 2000 -rs over \
 #     -minb 4.0 -maxb 64.0 -ep 8 -do 0.5
+#
+# python spacy_textcat.py articles.pkl -m spacy-9.a -o spacy-9.a -CVI 2000 -rt -rs under
+#
+# python spacy_textcat.py reddit.pkl -m spacy-9.a -o spacy-9.ar -CVI 2000 -rs choose_n
+#
+# python spacy_textcat.py articles.pkl -m spacy-9.ar -o spacy-9.ara -CVI 2000 -rs under
+#
+# #ran to here
+#
+# python spacy_textcat.py reddit.pkl -m spacy-9.ara -CVI 2000 -rs choose_n -maxN 2000
+#
+# python spacy_textcat.py articles.pkl -m spacy-9.ara -CVI 2000 -rs under
+#
+# python spacy_textcat.py reddit.pkl -m spacy-9.ara -CVI 2000 -rs choose_n
+#
+# python spacy_textcat.py articles.pkl -m spacy-9.ara -CVI 2000 -rs under
+#
+# python spacy_textcat.py articles.pkl -m spacy-9.ara -o spacy-9.araa -CVI 2000
+#
+# python spacy_textcat.py articles.pkl -m spacy-9.araa -o spacy-9.araaa -CVI 2000
 
-python spacy_textcat.py articles_no_center.pkl -m spacy-9.a -o spacy-9.a -CVI 2000 -rs over \
-    -minb 4.0 -maxb 16.0 -ep 1 -do 0.6
+# python spacy_textcat.py articles.pkl -m spacy-10.a -CVI 2000 -rs over -fb
+#
+# python spacy_textcat.py reddit.pkl -m spacy-10.a -o spacy-10.ar -CVI 2000 -rs choose_n
+#
+# python spacy_textcat.py articles.pkl -m spacy-10.ar -o spacy-10.ara -CVI 2000 -rs under -fb
+#
+# python spacy_textcat.py reddit.pkl -m spacy-10.ara -CVI 2000 -rs choose_n -maxN 2000
+#
+# python spacy_textcat.py articles.pkl -m spacy-10.ara -CVI 2000 -rs under -fb
+#
+# python spacy_textcat.py reddit.pkl -m spacy-10.ara -CVI 2000 -rs choose_n
+#
+# python spacy_textcat.py articles.pkl -m spacy-10.ara -CVI 2000 -rs under -fb
 
-python spacy_textcat.py reddit_no_center.pkl -m spacy-9.a -o spacy-9.ar -CVI 2000 -rs choose_n \
-    -maxN 4000 -minb 4.0 -maxb 16.0 -ep 1 -do 0.6
+#python spacy_textcat.py reddit.pkl -m spacy-4.r -o spacy-11.rr -minb 4.0 -maxb 128.0 -do 0.5 -rs under
+# python spacy_textcat.py reddit.pkl -m spacy-11.rr -o spacy-11.r3 -minb 4.0 -maxb 128.0 -do 0.3 -rs under
+# python spacy_textcat.py reddit.pkl -m spacy-11.r3 -o spacy-11.r4 -minb 4.0 -maxb 128.0 -do 0.2 -rs under
+# python spacy_textcat.py reddit.pkl -m spacy-11.r4 -o spacy-11.r5 -minb 4.0 -maxb 128.0 -do 0.1 -rs under
+#
+python spacy_textcat.py mixed.pkl -m spacy-11.r5 -o spacy-11.r5m1 -minb 4.0 -maxb 128.0 -do 0.5 -rs under
+python spacy_textcat.py mixed.pkl -m spacy-11.r5m1 -o spacy-11.r5m2 -minb 4.0 -maxb 128.0 -do 0.3 -rs under
+python spacy_textcat.py mixed.pkl -m spacy-11.r5m2 -o spacy-11.r5m3 -minb 4.0 -maxb 128.0 -do 0.2 -rs under
 
-python spacy_textcat.py articles_no_center.pkl -m spacy-9.ar -o spacy-9.ara -CVI 2000 -rs over \
-    -minb 4.0 -maxb 16.0 -ep 2 -do 0.6
+rm ../data/tag_dir/mixed_tags.npy
 
+python spacy_textcat.py mixed.pkl -m spacy-11.r5 -o spacy-11.r5m1v2 -minb 4.0 -maxb 128.0 -do 0.5 -rs under
+python spacy_textcat.py mixed.pkl -m spacy-11.r5m1v2 -o spacy-11.r5m2v2 -minb 4.0 -maxb 128.0 -do 0.3 -rs under
+python spacy_textcat.py mixed.pkl -m spacy-11.r5m2v2 -o spacy-11.r5m3v2 -minb 4.0 -maxb 128.0 -do 0.2 -rs under
 
+rm ../data/tag_dir/mixed_tags.npy
 
-
-
-
+python spacy_textcat.py mixed.pkl -m spacy-11.r5 -o spacy-11.r5m1v3 -minb 4.0 -maxb 128.0 -do 0.5 -rs under
+python spacy_textcat.py mixed.pkl -m spacy-11.r5m1v3 -o spacy-11.r5m2v3 -minb 4.0 -maxb 128.0 -do 0.3 -rs under
+python spacy_textcat.py mixed.pkl -m spacy-11.r5m2v3 -o spacy-11.r5m3v3 -minb 4.0 -maxb 128.0 -do 0.2 -rs under
 
 
 #

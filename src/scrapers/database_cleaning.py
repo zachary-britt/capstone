@@ -12,6 +12,11 @@ def remove_dups(table):
     # urls = [ doc['link'] for doc in docs]
     # _ids = [ doc['_id'] for doc in docs]
 
+    if 'web_url' in docs[0].keys():
+        for i,_ in enumerate(docs):
+            docs[i]['link'] = docs[i]['web_url']
+
+
     pairs = [ (doc['link'],doc['_id']) for doc in docs]
     pair_dict = dict(pairs)
     id_keepers = set(pair_dict.values())
@@ -122,7 +127,7 @@ def check_political(table, keep_political):
         return table.delete_many( {'_id': {'$nin': _ids}} )
     else:
         #return table.delete_many( {'_id':{'$in': _ids}})
-
+        pass    # already done, except expanded tags for filtering out nonpolitical, politics posts
 
 def main(t_name):
     table = st.open_database_collection(t_name)

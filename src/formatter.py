@@ -69,10 +69,14 @@ def universal_text_cleaner(text):
             """â""":'“',
             """â\\x80\\x9c'""":'“',
             """â""":'”',
-            '''â\\x80\\x9d''':'”'
-
-
-
+            '''â\\x80\\x9d''':'”',
+            'U.S. President Donald Trump': 'Trump',
+            'President Donald Trump': 'Trump',
+            'President Trump':'Trump',
+            'Mr Trump':'Trump',
+            'Mr. Trump':'Trump',
+            'Donald Trump':'Trump',
+            'Donald':'Trump'
         }
 
     #strip links
@@ -103,14 +107,13 @@ def universal_text_stripper(text):
             text = text[i+len(start_after):]
             intro = intro[i+len(start_after):]
 
-    #TODO: consistent representative abbreviations
+    #consistent representative abbreviations
     # state_abbers = ['AL','AK','AZ','AR','CA',
     #  'CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
     #  'MA','MI','MN','MS','MO','MT', 'NE', 'NV', 'NH','NJ','NM','NY','NC','ND','OH',
     #  'OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','WV','WA','VA','WI','WY']
     #
     # for ab in state_abbers:
-    #
     #     text.lower().find_all(ab)
 
     text = text.replace('\t',' ')
@@ -125,7 +128,7 @@ def universal_text_stripper(text):
     strip_chars = ' \n ,-―'
     text = text.strip(strip_chars)
 
-    start_afters = ['WASHINGTON,  ', '(AP),  ', '(REUTERS)']
+    start_afters = ['WASHINGTON, ', '(AP),  ', '(REUTERS)']
     intro = text[:20]
     for start_after in start_afters:
         i = intro.find(start_after)
@@ -351,10 +354,10 @@ def bb_clean_text(text):
         text = kill_from_line(*kill_args)
 
 
-    sign_offs = [   '\nFollow ', '\n Follow ',
-                    '\niFrameResize(',
-                    '\nYou can follow', '\n You can follow',
-                    '\n(h/t'
+    sign_offs = [   '\n Follow ', '\n Follow ',
+                    '\n iFrameResize(',
+                    '\n You can follow', '\n You can follow',
+                    '\n (h/t'
                 ]
 
     for sign_off in sign_offs:
@@ -393,8 +396,8 @@ def mj_clean_text(text):
         text = kill_from_line(*kill_args)
 
 
-    sign_offs = [   '\nRead the full ',
-                    '\nThis is a developing story'
+    sign_offs = [   '\n Read the full ',
+                    '\n This is a developing story'
                 ]
 
     for sign_off in sign_offs:
@@ -426,9 +429,9 @@ def od_clean_text(text):
         text = kill_from_line(*kill_args)
 
 
-    sign_offs = [   '\nDownload our NEW',
+    sign_offs = [   '\n Download our NEW',
                     '\n Download our NEW',
-                    '\nWatch his remarks here:\n',
+                    '\n Watch his remarks here:',
                     'Add your name to millions',
                     '\n A post shared by '
                 ]
@@ -448,8 +451,81 @@ def od_clean(df):
     return df
 
 
+def ai_clean_text(text):
+    ''' Clean addicting info text '''
+    return text
+
 def ai_clean(df):
-    pass
+    ''' Clean addicting info dataframe '''
+    from formatter import ai_clean_text
+    pool = Pool(4)
+    df['content'] = pool.map(ai_clean_text, df['content'])
+    return df
+
+def gp_clean_text(text):
+    ''' Clean gateway pundit text '''
+    return text
+
+def gp_clean(df):
+    ''' Clean gateway pundit dataframe '''
+    from formatter import gp_clean_text
+    pool = Pool(4)
+    df['content'] = pool.map(gp_clean_text, df['content'])
+    return df
+
+def nyt_clean_text(text):
+    ''' Clean new york times text '''
+
+    aborts = ['ourpicks@nytimes.com','CAtoday@nytimes.com.']
+
+    for abort in aborts:
+        if text.find(abort) != -1:
+            return ''
+
+
+    sign_ins =  [   'WASHINGTON — ',
+                    'CHICAGO — '
+                ]
+    for sign_in in sign_ins:
+        i = text.find(sign_in)
+        if i != -1:
+            text = text[i+len(sign_in):]
+
+    kill_from_args = [  'Follow him on Twitter ',
+                        'Sign up for ',
+                        'contributed reporting',
+                        'Get politics and Washington news updates',
+                        'reported from Washington'
+                     ]
+
+    for kill_from_arg in kill_from_args:
+        kill_args = [text, kill_from_arg]
+        text = kill_from_line(*kill_args)
+
+
+    sign_offs = [   '\n Read the full ',
+                    '\n A version of this article ',
+                    ' \n Follow '
+                ]
+
+    for sign_off in sign_offs:
+        i = text.find(sign_off)
+        if i != -1:
+            text = text[:i]
+
+    text = text.replace('\n Please verify you’re not a robot by clicking the box. \n Invalid email address. Please re-enter. \n You must select a newsletter to subscribe to. \n View all New York Times newsletters. \n','\n')
+    text = text.replace('\n Advertisement \n', '\n')
+    text = text.replace('New York Times', 'this newspaper')
+    text = text.replace('NYT', 'this newspaper')
+    text = text.replace('nytimes', 'this newspaper')
+    return text
+
+def nyt_clean(df):
+    ''' Clean new york times text '''
+    from formatter import nyt_clean_text
+    pool = Pool(4)
+    df['content'] = pool.map(nyt_clean_text, df['content'])
+    return df
 
 
 def find_leak(df, keyword):
@@ -531,11 +607,16 @@ def main(out_dir=DATA_PATH):
     print("Cleaned reddit no center comments, you've got {} of them".format(rncdf.shape[0]))
 
 
+    mixed_df = pd.concat( [df, rdf], ignore_index=True )
+    mixed_df.to_pickle(out_dir+'mixed.pkl')
 
 
     ''' Holdout Dfs'''
     hdfs = dl.load_holdout()
     hdfs = {name:universal_cleaner(hdfs[name]) for name in hdfs}
+
+    hdfs['nyt'] = nyt_clean(hdfs['nyt'])
+
     hdfs = {name:universal_stripper(hdfs[name]) for name in hdfs}
     hdfs = {name:cull_shorts(hdfs[name]) for name in hdfs}
 
