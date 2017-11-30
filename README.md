@@ -8,15 +8,7 @@ People can manually judge bias, but it inherantly involves subjective human asse
 
 ![](https://i.imgur.com/kP4Yax1.png "Partisan map")
 
-This process can be automated by mapping the web via twitter shares:
-
-![](https://thesocietypages.org/socimages/files/2017/09/4.png "Twitter Partisan map")
-
-
-![Trump also wants to know (not about Fox though)](https://github.com/zachary-britt/text2slant/blob/master/figures/Screenshot%20from%202017-11-28%2013-38-53.png)
-
 My goal is to tackle this by reading the text itself. 
-
 
 
 
@@ -27,28 +19,28 @@ The first major component of the project was data collection.
 For training data I used political news articles from:
 
 1. Right wing outlets:
-	* Fox (fox) 
-	* Breitbart (bb)
-	* Trump election advertisements (ads)
+	* Fox 
+	* Breitbart
+	* Trump election advertisements
 
 2. Left wing outlets
-	* the Huffington Post (hp)
-	* Mother Jones (mj)
-	* Occupy Democrats (od)
-	* Clinton election advertisements (ads)
+	* the Huffington Post
+	* Mother Jones
+	* Occupy Democrats
+	* Clinton election advertisements
 
 3. Neutral outlets
-	* Reuters (reu)
+	* Reuters
 
 I also scraped
-* Addicting Info (ai) (left)
+* Addicting Info (left)
 and
-* Gateway Pundit (gp) (right)
+* Gateway Pundit (right)
 
 but left them as a holdout set.
 
 
-These were tediously web scraped. See [src/scrapers/](https://github.com/zachary-britt/text2slant/tree/master/src/scrapers "scrapers"). HP, Fox and reuters were the original dataset, but they provide too little variation in their writing style. This allows a model to easily identify what "an HP" article looks like, without having to learn anything about political sentiment.
+These sources required customized web scraping [src/scrapers/](https://github.com/zachary-britt/text2slant/tree/master/src/scrapers "scrapers"). HP, Fox and reuters were the original dataset, but they provide too little variation in their writing style. This allows a model to easily identify what "an HP" article looks like, without having to learn anything about political sentiment.
 
 By expanding the dataset with a distinct sources, the model can be leveraged into memorizing less and learning more. 
 
@@ -58,6 +50,8 @@ The political comments are then filtered to include at least one recognized poli
 
 All of this data is saved to a mongo database for convenient storage.
 
+(no story)
+
 ### Pre-processing
 
 The next component of the project was pre-processing the text in a way which removed any obvious "tells" as to the source of the article. The text is loaded from mongo into a pandas dataframe and then stripped of source consistent introductory/ending sentences 
@@ -66,31 +60,34 @@ e.g.:
 
 	"Chris Stirewalt is the politics editor for Fox News. Brianna McClelland contributed to this report. Want FOX News Halftime Report in your inbox every day? Sign up here." 
 	
-gets cut, along with other references to the news source. (replacing 'Fox news' with 'this newspaper' and so on)
+gets cut, along with other references to the news source. (replacing 'Fox news' with 'this newspaper' and so on) 
 
 <br>
 
 After links and strange introductory - conclusion punctuation are stripped, the text is checked to be at least 400 characters long to ensure the model isn't being punished for not understanding a short collection of sentence fragments.
 
-At this stage the reddit comments are similarily also stripped of links, and the comments from political subreddits are filtered 
+At this stage the reddit comments are similarily also stripped of links, and the comments from political subreddits are filtered for length. See [src/formatter](https://github.com/zachary-britt/text2slant/blob/master/src/formatter.py "formatting")
 
 ### spaCy NLP
 
 With the text obfuscated we move on to processing the text in the spaCy NLP ecosystem. Instead of relearning how to read from scratch
 
+https://spacy.io/usage/training#section-textcat
+
 <br>
 
 ### Model training
 
-<br>
+[src/spacy_textcat](https://github.com/zachary-britt/text2slant/blob/master/src/spacy_textcat.py "textcat")
 
-### Model Performance on validation set
+[src/spacy_textcat](https://github.com/zachary-britt/text2slant/blob/master/src/runner_script
+ "textcat")
 
-<br>
 
-### Model Performance on articles from new sources
 
-<br>
+### Model Performance 
+
+
 
 ### Model next steps:
 
@@ -101,6 +98,15 @@ By scrambling the dates and topics we lose a huge amount of valuable information
 <br>
 
 # Obsolete from here on
+
+
+This process can be automated by mapping the web via twitter shares:
+
+![](https://thesocietypages.org/socimages/files/2017/09/4.png "Twitter Partisan map")
+
+
+![Trump also wants to know (not about Fox though)](https://github.com/zachary-britt/text2slant/blob/master/figures/Screenshot%20from%202017-11-28%2013-38-53.png)
+
 
 
 As a quick example, right now (2017-11-21) HP, Fox and Reuters each have a headline on net neutrality:
