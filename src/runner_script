@@ -101,18 +101,9 @@ source ~/.bashrc
 # python spacy_textcat.py articles.pkl -m spacy-9.ar -o spacy-9.ara -CVI 2000 -rs under
 #
 # #ran to here
-#
-# python spacy_textcat.py reddit.pkl -m spacy-9.ara -CVI 2000 -rs choose_n -maxN 2000
-#
-# python spacy_textcat.py articles.pkl -m spacy-9.ara -CVI 2000 -rs under
-#
-# python spacy_textcat.py reddit.pkl -m spacy-9.ara -CVI 2000 -rs choose_n
-#
-# python spacy_textcat.py articles.pkl -m spacy-9.ara -CVI 2000 -rs under
-#
-# python spacy_textcat.py articles.pkl -m spacy-9.ara -o spacy-9.araa -CVI 2000
-#
-# python spacy_textcat.py articles.pkl -m spacy-9.araa -o spacy-9.araaa -CVI 2000
+
+
+
 
 # python spacy_textcat.py articles.pkl -m spacy-10.a -CVI 2000 -rs over -fb
 #
