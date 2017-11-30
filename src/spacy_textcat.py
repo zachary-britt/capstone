@@ -27,22 +27,6 @@ class Model:
         self.labels = kwargs.get('labels',['left', 'right'])
         self.open_nlp_with_text_cat_()
 
-        self.cont_val = self.cfg.get('cont_val')
-        if self.cont_val:
-            self.setup_cont_val_logging()
-
-
-    def setup_cont_val_logging(self):
-        cont_val_load_path = self.model_dir.joinpath('cont_val.pkl')
-        if cont_val_load_path.exists() and not self.cfg.get('reset'):
-            with open(cont_val_load_path, 'rb') as f:
-                [self.cont_val_log, self.epoch_names, self.cont_val_N] = pickle.load(f)
-
-        else:
-            self.cont_val_log=[];
-            self.epoch_names = ''
-            self.cont_val_N = 0
-
 
     def open_nlp_with_text_cat_(self):
         if not self.model_dir.exists():
@@ -67,21 +51,12 @@ class Model:
 
 
     def load_and_configure_training_data(self, data_name):
-        if self.cont_val:
-            self.cfg['train_all']=True
-
         data = zutils.load_and_configure_data(data_name, **self.cfg)
-
-        if self.cont_val:
-            self.cfg['peek']=True
-            data.update(zutils.load_and_configure_data('holdout.pkl', **self.cfg))
-
         return data
 
 
     def fit(self, data_name, **kwargs):
         self.cfg.update(kwargs)
-        cont_val=self.cont_val
 
         data = self.load_and_configure_training_data(data_name)
         train_data = data.get('train')
@@ -93,8 +68,6 @@ class Model:
         for i in range(self.cfg.get('epochs', 1)):
             seen = 0;
             n = 0;
-            if cont_val:
-                self.epoch_names += data_name[0]
 
             bar = zutils.ProgressBar('Epoch: {}'.format(i+1), len(train_data))
             losses = {}
@@ -115,28 +88,18 @@ class Model:
                 bar.progress(seen, loss_str)
 
                 n += len(texts)
-                if cont_val:
-                    if n >= self.cont_val:
-                        #ipdb.set_trace()
-                        self.cont_val_N += self.cont_val; n = 0;
-                        t = bar.kill(loss_str)
-                        with self.textcat.model.use_params(self.optimizer.averages):
-                            self.cont_val_log.append((self.cont_val_N, self.evaluate_confusion(val_data)))
 
-                        bar = zutils.ProgressBar('Epoch: {}'.format(i+1), len(train_data))
-                        bar.start_time -= t
-                else:
-                    if n >= 10000:
-                        n=0
-                        t = bar.kill(loss_str)
-                        with self.textcat.model.use_params(self.optimizer.averages):
-                            val_arr = np.array(val_data)
-                            inds = np.arange(val_arr.shape[0])
-                            mini_val_inds = np.random.choice(inds, 1000, replace=False)
-                            mini_val = val_arr[mini_val_inds].tolist()
-                            scores=self.evaluate_confusion(mini_val)
-                        bar = zutils.ProgressBar('Epoch: {}'.format(i+1), len(train_data))
-                        bar.start_time -= t
+                if n >= 10000:
+                    n=0
+                    t = bar.kill(loss_str)
+                    with self.textcat.model.use_params(self.optimizer.averages):
+                        val_arr = np.array(val_data)
+                        inds = np.arange(val_arr.shape[0])
+                        mini_val_inds = np.random.choice(inds, 1000, replace=False)
+                        mini_val = val_arr[mini_val_inds].tolist()
+                        scores=self.evaluate_confusion(mini_val)
+                    bar = zutils.ProgressBar('Epoch: {}'.format(i+1), len(train_data))
+                    bar.start_time -= t
             bar.kill(loss_str)
             # end of epoch report
             if len(val_data): #check val data not empty
@@ -160,7 +123,6 @@ class Model:
         return scores
 
     def evaluate_confusion(self, test_data):
-        #ipdb.set_trace()
         thresholds = {'left':0.5, 'right':0.5}
         texts, label_dicts = zip(*test_data)
         cat_dicts = [label_dict['cats'] for label_dict in label_dicts]
@@ -198,11 +160,6 @@ class Model:
         print(output_dir)
         self.nlp.to_disk(output_dir)
 
-        if self.cont_val:
-            cont_val_save_path = output_dir.joinpath('cont_val.pkl')
-            with open(cont_val_save_path,'wb') as f:
-                pickle.dump([self.cont_val_log, self.epoch_names, self.cont_val_N], f)
-
 
 
 @plac.annotations(
@@ -219,8 +176,7 @@ class Model:
     max_batch_size=("Maximum Batch size", 'option', "maxb", float),
     float_bias=('Use float proportional bias', 'flag', 'fb', bool),
     epochs=("Training epochs", 'option', 'ep', int),
-    quiet=('Dont print all over everything','flag','q', bool),
-    continuous_val_interval=('Validate every n samples seen', 'option', 'CVI', int)
+    quiet=('Dont print all over everything','flag','q', bool)
 )
 def main(   data_name,
             model_name='spacy_clf',
@@ -235,8 +191,8 @@ def main(   data_name,
             max_batch_size=16.,
             float_bias=False,
             epochs=1,
-            quiet=False,
-            continuous_val_interval=0):
+            quiet=False
+            ):
 
     if float_bias:
         label_type = 'catbias'
@@ -246,7 +202,7 @@ def main(   data_name,
     kwargs = {  'out_name':out_name, 'reset':reset, 'test_all':test_all,
                 'train_all':train_all,'resampling':resampling,'dropout':dropout,
                 'minb':min_batch_size,'maxb':max_batch_size, 'label_type':label_type,
-                'cont_val':continuous_val_interval,'epochs':epochs,'verbose': not quiet,
+                'epochs':epochs,'verbose': not quiet,
                 "zipit":True, 'max_class_size': maxN}
 
     model = Model(model_name, **kwargs)
