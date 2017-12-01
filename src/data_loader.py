@@ -33,7 +33,9 @@ def load_dfs():
     ads_df=ads_df[ads_df['supports'].isin(('Hillary Clinton','Donald Trump'))]
     hp_df.drop('author', axis=1, inplace=True)
     mj_df = fill_dates(mj_df)
+    hp_df['source'] = 'hp'
     hp_df['date']= hp_df.date.apply( lambda date: dt.strftime(date, '%Y-%m-%d'))
+    reu_df['source'] = 'reu'
     reu_df['date']= reu_df.date.apply( lambda date: dt.strftime(date, '%Y-%m-%d'))
 
     # create bias metric

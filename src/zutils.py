@@ -487,7 +487,7 @@ def _print_progress_async(title, total, x, start_time, other):
         time_str = '{:2}:{:2}'.format(minutes,seconds)
     else:
         time_str = '{:2} s'.format(seconds)
-    time_str = 'eta: ' + time_str
+    time_str = 'ETA: ' + time_str
 
     bar_progress = int(progress_frac * 30)
     x_len = len(str(x))
@@ -543,7 +543,7 @@ class ProgressBar:
             time_str = '{:2} s'.format(seconds)
 
         sys.stdout.write('\r' +self.title +":" + bar_str+" " + progress_count_str
-                            +' time: '+ time_str +", " +other+ "\n" )
+                            +' DUR: '+ time_str +", " +other+ "\n" )
         sys.stdout.flush()
         return seconds_dur
 

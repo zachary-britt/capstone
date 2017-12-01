@@ -35,9 +35,15 @@ class Model:
         else:
             new_model = False
         if new_model or self.cfg.get('reset'):
-            print('Loading fresh nlp from en_core_web_lg')
-            self.nlp = spacy.load('en_core_web_lg')
+            print('Loading fresh nlp from en_vectors_web_lg')
+            self.nlp = spacy.load('en_vectors_web_lg')
+
+            ''''PIPE BUILT HERE'''#################################################
+
+            low_data = self.cfg.get('low_data')
+            pipe_cfg = {'low_data', low_data}
             self.textcat = self.nlp.create_pipe('textcat')
+
             self.nlp.add_pipe(self.textcat, last=True)
             for label in self.labels:
                 self.textcat.add_label(label)
@@ -59,9 +65,10 @@ class Model:
         self.cfg.update(kwargs)
 
         data = self.load_and_configure_training_data(data_name)
-        train_df = data.get('train')
-        val_df = data.get('test')
+        train_data = data.get('train')
+        val_data = data.get('test')
 
+        ''''MODEL CREATED HERE'''########################################################
         self.optimizer = self.nlp.begin_training(n_workers = 8)
         print("Training the model...")
 
@@ -204,6 +211,7 @@ class Model:
     min_batch_size=("Minimum Batch size", 'option', "minb", float),
     max_batch_size=("Maximum Batch size", 'option', "maxb", float),
     float_bias=('Use float proportional bias', 'flag', 'fb', bool),
+    low_data=('simplified model','flag', 'low_d', bool),
     epochs=("Training epochs", 'option', 'ep', int),
     quiet=('Dont print all over everything','flag','q', bool)
 )
@@ -219,6 +227,7 @@ def main(   data_name,
             min_batch_size=4.,
             max_batch_size=16.,
             float_bias=False,
+            low_data=False,
             epochs=1,
             quiet=False
             ):
