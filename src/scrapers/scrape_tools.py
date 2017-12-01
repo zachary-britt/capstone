@@ -36,7 +36,7 @@ def soup_browser(browser):
     return soup
 
 
-def souper(url, on_browser=True, saved=False, x_ind = None):
+def souper(url, on_browser=True, saved=False, x_ind=None):
     '''
     convert the stuff at path into Beautiful HTML Soup
 

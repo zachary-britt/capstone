@@ -59,25 +59,25 @@ class Model:
         self.cfg.update(kwargs)
 
         data = self.load_and_configure_training_data(data_name)
-        train_data = data.get('train')
-        val_data = data.get('test')
+        train_df = data.get('train')
+        val_df = data.get('test')
 
         self.optimizer = self.nlp.begin_training(n_workers = 8)
         print("Training the model...")
 
         for i in range(self.cfg.get('epochs', 1)):
-            seen = 0;
-            n = 0;
+            seen = 0
+            n = 0
 
             bar = zutils.ProgressBar('Epoch: {}'.format(i+1), len(train_data))
             losses = {}
-            # batch up the examples using spaCy's minibatch
 
+            # increase batch size from minb to maxb. Apparently this is the cool new thing
             minb = self.cfg.get('minb',32.)
             maxb = self.cfg.get('maxb',64.)
-
             batches = minibatch(train_data, size=compounding(minb, maxb, 1.001))
-            for j,batch in enumerate(batches):
+            for j, batch in enumerate(batches):
+
                 texts, labels = zip(*batch)
 
                 self.nlp.update(texts, labels, sgd=self.optimizer, drop=self.cfg.get('dropout',0.5),
@@ -87,62 +87,91 @@ class Model:
                 loss_str = 'Avg Loss: {0:.3f}'.format(100*losses['textcat'] / seen)
                 bar.progress(seen, loss_str)
 
-                n += len(texts)
 
-                if n >= 10000:
-                    n=0
-                    t = bar.kill(loss_str)
-                    with self.textcat.model.use_params(self.optimizer.averages):
-                        val_arr = np.array(val_data)
-                        inds = np.arange(val_arr.shape[0])
-                        mini_val_inds = np.random.choice(inds, 1000, replace=False)
-                        mini_val = val_arr[mini_val_inds].tolist()
-                        scores=self.evaluate_confusion(mini_val)
-                    bar = zutils.ProgressBar('Epoch: {}'.format(i+1), len(train_data))
-                    bar.start_time -= t
+                ''' run test on subset of validation set so you don't get bored '''
+                if len(val_data) and self.cfg.get('verbose'): #check val data not empty
+                    n += len(texts)
+                    if n >= 10000:
+                        n=0
+                        t = bar.kill(loss_str)
+                        with self.textcat.model.use_params(self.optimizer.averages):
+                            # subset validation set
+                            val_arr = np.array(val_data)
+                            inds = np.arange(val_arr.shape[0])
+                            mini_val_inds = np.random.choice(inds, 1000, replace=False)
+                            mini_val = val_arr[mini_val_inds].tolist()
+                            self.evaluate_confusion(mini_val)
+
+                        bar = zutils.ProgressBar('Epoch: {}'.format(i+1), len(train_data))
+                        bar.start_time -= t
             bar.kill(loss_str)
             # end of epoch report
-            if len(val_data): #check val data not empty
+            if len(val_data) and self.cfg.get('verbose'): #check val data not empty
                 with self.textcat.model.use_params(self.optimizer.averages):
-                    scores = self.evaluate_confusion(val_data)
+                    self.evaluate_confusion(val_data)
 
 
-    def score_texts(self, texts):
+    def score_texts(self, texts, verbose=True):
+
         scores = []
         docs = (self.nlp.tokenizer(text) for text in texts)
         N = len(texts)
         s = 64
         splits = [s for _ in range(int(N/s))]; splits.append(N % s);
         doc_chunks = ([next(docs) for _ in range(split)] for split in splits)
-        bar = zutils.ProgressBar('Eval: ', N)
+        if verbose: bar = zutils.ProgressBar('Eval: ', N)
+
         for chunk in doc_chunks:
             for doc in self.textcat.pipe(chunk):
                 scores.append(doc.cats)
-                bar.increment()
-        bar.kill()
-        return scores
+                if verbose: bar.increment()
+
+        if verbose: bar.kill()
+
+        #to pandas output
+        scores_df = pd.DataFrame(scores)
+
+        return scores_df
 
     def evaluate_confusion(self, test_data):
         thresholds = {'left':0.5, 'right':0.5}
-        texts, label_dicts = zip(*test_data)
-        cat_dicts = [label_dict['cats'] for label_dict in label_dicts]
-        scores = self.score_texts(texts)
+
+        # tediously handle list or pandas DataFrame input
+        if type(test_data) == list:
+            texts, label_dicts = zip(*test_data)
+            cat_dicts = [label_dict['cats'] for label_dict in label_dicts]
+        elif type(test_data) == pd.DataFrame:
+            texts = test_data['content'].tolist()
+            if 'left' in test_data.columns:
+                is_lefts = test_data['left']
+                is_rights = test_data['right']
+            elif 'orient' in test_data.columns:
+                is_lefts = test_data['orient'].values.where('left',1,0)
+                is_rights = test_data['orient'].values.where('right',1,0)
+            else:
+                print('test data label column not found')
+                return
+            cat_dicts = [{'left':z[0],'right':z[1]} for z in zip(is_lefts, is_rights)]
+        else:
+            print('test_data is of type {}, must be list or dataframe')
+            return
+
+        scores_df = self.score_texts(texts)
 
         for label in thresholds:
-            label_scores = np.array([score[label] for score in scores])
+            label_scores = scores_df[label]
+            # label_scores = np.array([score[label] for score in scores])
             real_labels = np.array([label_dict[label] for label_dict in cat_dicts])
             thresh = thresholds[label]
 
             M = eval_utils.build_confusion(real_labels, label_scores, thresh)
             eval_utils.print_confusion_report(M, label)
-        return scores
+        return
 
-    def predict_proba(self, texts, label=None):
-        if label:
-            labels = [label]
-        else:
-            labels = self.labels
-        scores = self.score_texts(texts)
+    def predict_proba(self, df, verbose=True):
+        texts = df['content'].tolist()
+        labels = self.labels
+        scores = self.score_texts(texts, verbose)
         probs = {[ score[label] for score in scores ] for label in labels}
         return np.array(probs)
 
@@ -169,7 +198,7 @@ class Model:
     reset=("Reset model found in model_loc", "flag", "rt", bool),
     test_all=('Dont train on data, just evaluate', 'flag','ev', bool),
     train_all=('Dont split data, train on full set', 'flag', 'tr', bool),
-    resampling=('Type of resampling to use [over, under, none]', 'option', 'rs', str),
+    resampling=('Type of resampling to use [over, under, choose_n, none]', 'option', 'rs', str),
     maxN=('max class size for choose N resampling', 'option', 'maxN', int),
     dropout=("Dropout rate to use", 'option', 'do', float),
     min_batch_size=("Minimum Batch size", 'option', "minb", float),

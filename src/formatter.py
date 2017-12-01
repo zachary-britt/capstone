@@ -29,8 +29,8 @@ df:     (w/ 'source' column)
                             ],
 
                 'kill_froms': [
-                                    ('is a Reporter for Fox', '\n'),
-                                    ('is a White House Producer for FOX', '\n')
+                                    'is a Reporter for Fox',
+                                    'is a White House Producer for FOX'
                             ],
 
                 'sign_outs': [
@@ -70,21 +70,33 @@ def universal_text_cleaner(text):
             """â\\x80\\x9c'""":'“',
             """â""":'”',
             '''â\\x80\\x9d''':'”',
+
+            # Trump Aliases
+
             'U.S. President Donald Trump': 'Trump',
+            'U.S. President Elect Donald Trump': 'Trump',
+            'U.S. President elect Donald Trump': 'Trump',
             'President Donald Trump': 'Trump',
+            'President Elect Donald Trump': 'Trump',
+            'President elect Donald Trump': 'Trump',
             'President Trump':'Trump',
+            'President Elect Trump': 'Trump',
+            'President elect Trump': 'Trump',
             'Mr Trump':'Trump',
             'Mr. Trump':'Trump',
             'Donald Trump':'Trump',
-            'Donald':'Trump'
+            'Donald':'Trump',
+
+            # Maybe do the same for senators, representatives, Clinton.........
+
         }
+
+    for k in replacements:
+        text = text.replace(k, replacements[k])
 
     #strip links
     text = re.sub(r'http\S+', '', text)
     text = re.sub(r'www\S+', '', text)
-
-    for k in replacements:
-        text = text.replace(k, replacements[k])
 
     return text
 
@@ -453,6 +465,7 @@ def od_clean(df):
 
 def ai_clean_text(text):
     ''' Clean addicting info text '''
+    #TODO
     return text
 
 def ai_clean(df):
@@ -463,6 +476,7 @@ def ai_clean(df):
     return df
 
 def gp_clean_text(text):
+    #TODO
     ''' Clean gateway pundit text '''
     return text
 

@@ -137,7 +137,13 @@ def _format_y(df, **cfg):
 def _resampler(y, **cfg):
     resampling_type=cfg.get('resampling')
 
+
     if resampling_type == 'none' or not resampling_type:
+        return y.index.values
+
+    valid_types = ['over','under','choose_n']
+    if resampling_type not in valid_types:
+        print('{} is not a recognized resampling_type')
         return y.index.values
 
     raw_counts = y.value_counts()

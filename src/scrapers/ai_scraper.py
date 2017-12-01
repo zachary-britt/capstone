@@ -1,5 +1,4 @@
 import ipdb
-from pymongo.errors import DuplicateKeyError, CollectionInvalid
 from scrape_tools import open_database_collection, souper, table_grabber, soup_browser, table_to_list
 from selenium import webdriver
 from datetime import datetime, timedelta

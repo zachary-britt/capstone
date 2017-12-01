@@ -29,11 +29,6 @@ class BaselineCLF:
         clf = Pipeline( steps=[('v',vectorizer), ('nb',model) ])
         return clf
 
-    # def _data_cfg(self, data):
-    #     X,y = zip(*data)
-    #     X = np.array(X)
-    #     y = np.vstack(y)
-    #     return (X,y)
 
     def _baseline_data_load_and_cfg(self, **cfg):
         data_cfg = {
@@ -103,8 +98,6 @@ class BaselineCLF:
 
             print('\nTRAINING REPORT\n')
             pprint(train_report)
-
-            #ipdb.set_trace()
 
             print('\nTESTING REPORT\n')
             pprint(test_report)
