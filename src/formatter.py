@@ -561,9 +561,6 @@ def cull_shorts(df, min_length=400):
 
 
 
-
-
-
 def main(out_dir=DATA_PATH):
     '''
         Load dfs from table using data_loader
@@ -630,7 +627,7 @@ def main(out_dir=DATA_PATH):
     hdfs = {name:universal_cleaner(hdfs[name]) for name in hdfs}
 
     hdfs['nyt'] = nyt_clean(hdfs['nyt'])
-
+    hdfs['nyt']['source'] = 'nyt'
     hdfs = {name:universal_stripper(hdfs[name]) for name in hdfs}
     hdfs = {name:cull_shorts(hdfs[name]) for name in hdfs}
 

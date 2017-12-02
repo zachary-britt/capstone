@@ -472,6 +472,20 @@ def _load_and_configure_test_data(data_name, **cfg):
     return {'test':return_vals}
 
 
+def make_ultra_cross_val(test_source, **cfg):
+
+    art_df = pd.read_pickle('..data/articles.pkl')
+    hold_df = pd.read_pickle('..data/holdout.pkl')
+    art_df = pd.concat([art_df, hold_df])
+    reddit_df = pd.read_pickle('../data/reddit.pkl')
+
+    sources = ['bb','fox','reu','hp','od','mj','gp','ai','nyt']
+
+    df_test = art_df[art_df.source == source]
+    df_train = art_df[art_df.source != source]
+
+    
+
 
 ''' TERMINAL OUTPUT UTILS'''
 

@@ -89,15 +89,15 @@ class Model:
 
                 self.nlp.update(texts, labels, sgd=self.optimizer, drop=self.cfg.get('dropout',0.5),
                                 losses=losses)
-
-                seen += len(texts)
-                loss_str = 'Avg Loss: {0:.3f}'.format(100*losses['textcat'] / seen)
+                bs = len(texts)
+                seen += bs
+                loss_str = 'Avg Loss: {0:.3f}'.format(100*losses['textcat'] / j)
                 bar.progress(seen, loss_str)
 
 
                 ''' run test on subset of validation set so you don't get bored '''
                 if len(val_data) and self.cfg.get('verbose'): #check val data not empty
-                    n += len(texts)
+                    n += bs
                     if n >= 10000:
                         n=0
                         t = bar.kill(loss_str)

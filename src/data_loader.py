@@ -89,9 +89,9 @@ def load_reddit():
     neutral_df = zutils.open_as_df('neutral_reddit')
 
 
-    left_df['bias'] = 1;   left_df['orient'] = 'left'
-    right_df['bias']= 1;    right_df['orient'] = 'right'
-    neutral_df['bias']=0;   neutral_df['orient']='center'
+    left_df['bias'] = 1;   left_df['orient'] = 'left';      left_df['source'] = 'lred';
+    right_df['bias']= 1;    right_df['orient'] = 'right';   right_df['source']= 'rred';
+    neutral_df['bias']=0;   neutral_df['orient']='center';  neutral_df['source']='cred';
 
     df = pd.concat([left_df,neutral_df,right_df], ignore_index=True)
     drops = ['author','score','subreddit']
