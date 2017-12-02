@@ -87,6 +87,13 @@ def universal_text_cleaner(text):
             'Donald Trump':'Trump',
             'Donald':'Trump',
 
+            'EXCLUSIVE –':'',
+            'EXCLUSIVE–':'',
+            'LISTEN:':'',
+            'VIDEO:':'',
+            ' - Reuters interview':'',
+            'Reuters interview' :'',
+
             # Maybe do the same for senators, representatives, Clinton.........
 
         }
@@ -105,6 +112,10 @@ def universal_cleaner(df):
     from formatter import universal_text_cleaner
     pool = Pool(4)
     df['content'] = pool.map(universal_text_cleaner,  df['content'])
+
+    if 'title' in df.columns:
+        df['title'] = pool.map(universal_text_cleaner,  df['title'])
+
     pool.close()
     pool.join()
     return df
@@ -154,6 +165,10 @@ def universal_stripper(df):
     from formatter import universal_text_stripper
     pool = Pool(4)
     df['content'] = pool.map(universal_text_stripper, df['content'])
+
+    if 'title' in df.columns:
+        df['title'] = pool.map(universal_text_cleaner,  df['title'])
+
     pool.close()
     pool.join()
     return df

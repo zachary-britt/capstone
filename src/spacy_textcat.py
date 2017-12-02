@@ -35,10 +35,14 @@ class Model:
         else:
             new_model = False
         if new_model or self.cfg.get('reset'):
-            print('Loading fresh nlp from en_vectors_web_lg')
-            self.nlp = spacy.load('en_vectors_web_lg')
 
-            ''''PIPE BUILT HERE'''#################################################
+            if self.cfg.get('glove'):
+                spacy_model_name = 'en_vectors_web_lg'
+            else:
+                spacy_model_name = 'en_core_web_lg'
+
+            print('Loading fresh nlp from {}'.format(spacy_model_name))
+            self.nlp = spacy.load(spacy_model_name)
 
             low_data = self.cfg.get('low_data')
             pipe_cfg = {'low_data', low_data}
@@ -60,6 +64,17 @@ class Model:
         data = zutils.load_and_configure_data(data_name, **self.cfg)
         return data
 
+    def _make_optimizer(self):
+        # cannibalized from spacy/spacy/_ml/create_default_optimizer
+        optimizer = self.nlp.begin_training(n_workers = 8)
+        optimizer.learn_rate = self.cfg.get('learn_rate', 0.001)
+        optimizer.beta1 = self.cfg.get('optimizer_B1', 0.9)
+        optimizer.beta2 = self.cfg.get('optimizer_B2', 0.999)
+        optimizer.eps = self.cfg.get('optimizer_eps', 1e-08)
+        optimizer.L2 = self.cfg.get('L2_penalty', 1e-6)
+        optimizer.max_grad_norm = self.cfg.get('grad_norm_clip', 1.)
+
+        return optimizer
 
     def fit(self, data_name, **kwargs):
         self.cfg.update(kwargs)
@@ -68,12 +83,12 @@ class Model:
         train_data = data.get('train')
         val_data = data.get('test')
 
-        ''''MODEL CREATED HERE'''########################################################
-        self.optimizer = self.nlp.begin_training(n_workers = 8)
+        optimizer = self._make_optimizer()
+
         print("Training the model...")
 
         for i in range(self.cfg.get('epochs', 1)):
-            seen = 0
+            total_seen = 0
             n = 0
 
             bar = zutils.ProgressBar('Epoch: {}'.format(i+1), len(train_data))
@@ -87,12 +102,12 @@ class Model:
 
                 texts, labels = zip(*batch)
 
-                self.nlp.update(texts, labels, sgd=self.optimizer, drop=self.cfg.get('dropout',0.5),
+                self.nlp.update(texts, labels, sgd=optimizer, drop=self.cfg.get('dropout',0.5),
                                 losses=losses)
                 bs = len(texts)
-                seen += bs
-                loss_str = 'Avg Loss: {0:.3f}'.format(100*losses['textcat'] / j)
-                bar.progress(seen, loss_str)
+                total_seen += bs
+                loss_str = 'Avg Loss: {0:.3f}'.format(100*losses['textcat'] / (j+1))
+                bar.progress(total_seen, loss_str)
 
 
                 ''' run test on subset of validation set so you don't get bored '''
@@ -101,21 +116,27 @@ class Model:
                     if n >= 10000:
                         n=0
                         t = bar.kill(loss_str)
-                        with self.textcat.model.use_params(self.optimizer.averages):
-                            # subset validation set
-                            val_arr = np.array(val_data)
-                            inds = np.arange(val_arr.shape[0])
-                            mini_val_inds = np.random.choice(inds, 1000, replace=False)
-                            mini_val = val_arr[mini_val_inds].tolist()
-                            self.evaluate_confusion(mini_val)
+                        with self.textcat.model.use_params(optimizer.averages):
+                            self.in_progress_val(val_data)
 
                         bar = zutils.ProgressBar('Epoch: {}'.format(i+1), len(train_data))
                         bar.start_time -= t
+                # end epoch
+
             bar.kill(loss_str)
+
             # end of epoch report
             if len(val_data) and self.cfg.get('verbose'): #check val data not empty
-                with self.textcat.model.use_params(self.optimizer.averages):
+                with self.textcat.model.use_params(optimizer.averages):
                     self.evaluate_confusion(val_data)
+
+    def in_progress_val(self, val_data):
+        # subset validation set
+        val_arr = np.array(val_data)
+        inds = np.arange(val_arr.shape[0])
+        mini_val_inds = np.random.choice(inds, 1000, replace=False)
+        mini_val = val_arr[mini_val_inds].tolist()
+        self.evaluate_confusion(mini_val)
 
 
     def score_texts(self, texts, verbose=True):
@@ -208,11 +229,13 @@ class Model:
     resampling=('Type of resampling to use [over, under, choose_n, none]', 'option', 'rs', str),
     maxN=('max class size for choose N resampling', 'option', 'maxN', int),
     dropout=("Dropout rate to use", 'option', 'do', float),
+    L2_penalty=("L2 regularization param", 'option', 'l2', float),
     min_batch_size=("Minimum Batch size", 'option', "minb", float),
     max_batch_size=("Maximum Batch size", 'option', "maxb", float),
     float_bias=('Use float proportional bias', 'flag', 'fb', bool),
     low_data=('simplified model','flag', 'low_d', bool),
     epochs=("Training epochs", 'option', 'ep', int),
+    glove=("use gloVe vectors", 'flag','gl', bool),
     quiet=('Dont print all over everything','flag','q', bool)
 )
 def main(   data_name,
@@ -224,11 +247,13 @@ def main(   data_name,
             resampling='over',
             maxN=2000,
             dropout=0.6,
+            L2_penalty=1e-6,
             min_batch_size=4.,
             max_batch_size=16.,
             float_bias=False,
             low_data=False,
             epochs=1,
+            glove=False,
             quiet=False
             ):
 
@@ -240,8 +265,8 @@ def main(   data_name,
     kwargs = {  'out_name':out_name, 'reset':reset, 'test_all':test_all,
                 'train_all':train_all,'resampling':resampling,'dropout':dropout,
                 'minb':min_batch_size,'maxb':max_batch_size, 'label_type':label_type,
-                'epochs':epochs,'verbose': not quiet,
-                "zipit":True, 'max_class_size': maxN}
+                'epochs':epochs,'verbose': not quiet, 'glove':glove,
+                'L2_penalty':L2_penalty, "zipit":True, 'max_class_size': maxN}
 
     model = Model(model_name, **kwargs)
 
