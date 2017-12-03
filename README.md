@@ -8,6 +8,8 @@ People can manually judge bias, but it inherantly involves subjective human asse
 
 ![](https://i.imgur.com/kP4Yax1.png "Partisan map")
 
+Made by Vanessa Otero, allgeneralizationsarefalse.com
+
 My goal is to tackle this by reading the text itself. 
 
 
@@ -34,8 +36,9 @@ For training data I used political news articles from:
 
 I also scraped
 * Addicting Info (left)
-and
 * Gateway Pundit (right)
+* NYT -reporting sections- (center)
+* CNN -online articles- (center)
 
 but left them as a holdout set.
 
