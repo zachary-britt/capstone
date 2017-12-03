@@ -41,6 +41,8 @@ def main(   base_model_name='spacy-15.r4',
             quiet=False,
             reddit_ratio=5.0):
 
+    '''Cross validation setup and execution'''
+
     zutils.make_ultra_cross_val(reddit_ratio=reddit_ratio)
 
 
@@ -65,10 +67,12 @@ def main(   base_model_name='spacy-15.r4',
         print('Holdout set: {}\n'.format(source))
         train_name = 'cross_vals/{}/train.pkl'.format(source)
         test_name = 'cross_vals/{}/test.pkl'.format(source)
-        model_out_name = out_name + source
+        model_out_name = out_name + source + '.2'
         cfg['out_name'] = model_out_name
         cfg['train_all'] = True
         cfg['test_all'] = False
+
+        base_model_name = 'cross_val_models/'+source
 
         spacecat = Spacecat(base_model_name, **cfg)
         spacecat.fit(train_name, **cfg)
@@ -88,7 +92,7 @@ def main(   base_model_name='spacy-15.r4',
         test_df['right_pred'] = test_scores['right']
         print('\n{} predicted scores:\n'.format(source))
         pprint(test_df[['left_pred','right_pred']].describe())
-        test_df.to_pickle(DATA_PATH+'cross_vals/{}/test_scores.pkl'.format(source))
+        test_df.to_pickle(DATA_PATH+'cross_vals/{}/test_scores2.pkl'.format(source))
 
 if __name__ == '__main__':
     plac.call(main)

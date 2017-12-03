@@ -145,6 +145,16 @@ def score_average(texts, models):
 
 
 
+def scale_back_reu(scores):
+    min_ = scores.min()
+    max_ = scores.max()
+    mid_ = scores.loc['reu']
+    range_ = max_ - min_
+    scale = 2/range_
+    shift = -mid_
+    new_scores = scores + shift
+    new_scores = new_scores * scale
+    return new_scores
 
 
 def build_profile(model_name):
@@ -167,12 +177,26 @@ def build_profile(model_name):
     plt.show()
 
 
+def scale_back_reu(scores):
+    min_ = scores.min()
+    max_ = scores.max()
+    mid_ = scores.loc['reu']
+    range_ = max_ - min_
+    scale = 2/range_
+    shift = -mid_
+    new_scores = scores + shift
+    new_scores = new_scores * scale
+    return new_scores
+
+
 if __name__ == '__main__':
 
     # model_names = ['spacy-3.aaara', 'spacy-4.raaaa', 'spacy-5.a10', 'spacy-6.aaaa',
     #                     'spacy-7.aaaa', 'spacy-8.ara']
     model_name = 'spacy-8.ara'
     build_profile(model_name)
+
+
 
 
     #

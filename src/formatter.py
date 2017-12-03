@@ -677,13 +677,13 @@ def save_full_corpus():
 
 def main(out_dir=DATA_PATH):
     '''
-        Load dfs from table using data_loader
-        Run universal_cleaner on text
+    Load dfs from table using data_loader
+    Run universal_cleaner on text
 
-        Run source specific cleaning on text
-            (depends on consistent formatting, i.e. don't change universal_cleaner)
+    Run source specific cleaning on text
+        (depends on consistent formatting, i.e. don't change universal_cleaner)
 
-        Run universal_stripper on text
+    Run universal_stripper on text
      '''
 
 
@@ -700,7 +700,7 @@ def main(out_dir=DATA_PATH):
     dfs['od'] = od_clean(dfs['od'])
 
     dfs = {name:universal_stripper(dfs[name]) for name in dfs}
-    dfs = {name:cull_shorts(dfs[name]) for name in dfs}
+    dfs = {name:cull_shorts(dfs[name], min_length=1000) for name in dfs}
     df = pd.concat( list(dfs.values()), ignore_index=True )
     df.to_pickle(out_dir+'articles.pkl')
 
@@ -715,9 +715,10 @@ def main(out_dir=DATA_PATH):
 
     '''Reddit dfs'''
     rdf = dl.load_reddit()
+    rdf = cull_shorts(rdf, min_length=600)
     rdf = universal_cleaner(rdf)
     rdf = universal_stripper(rdf)
-    rdf = cull_shorts(rdf)
+    rdf = cull_shorts(rdf, min_length=600)
     rdf.to_pickle(out_dir+'reddit.pkl')
 
     print("Cleaned reddit comments, you've got {} of them".format(rdf.shape[0]))
@@ -743,7 +744,7 @@ def main(out_dir=DATA_PATH):
     hdfs['nyt'] = nyt_clean(hdfs['nyt'])
     hdfs['nyt']['source'] = 'nyt'
     hdfs = {name:universal_stripper(hdfs[name]) for name in hdfs}
-    hdfs = {name:cull_shorts(hdfs[name]) for name in hdfs}
+    hdfs = {name:cull_shorts(hdfs[name], min_length=1000) for name in hdfs}
 
     hdf = pd.concat( list(hdfs.values()), ignore_index=True )
     hdf.to_pickle(out_dir+'holdout.pkl')
@@ -754,7 +755,7 @@ def main(out_dir=DATA_PATH):
     udf = universal_cleaner(udf)
     udf = cnn_clean(udf)
     udf = universal_stripper(udf)
-    udf = cull_shorts(udf)
+    udf = cull_shorts(udf, min_length=1000)
     udf.to_pickle(out_dir+'udf.pkl')
 
     # now instead set as central

@@ -29,6 +29,11 @@ class Model:
 
 
     def open_nlp_with_text_cat_(self):
+        '''
+        Loads prebuilt model
+        -If spacy model, it creates the textcat pipe component and adds it
+        -If reloaded from model saved here, loads that model and textcat
+        '''
         if not self.model_dir.exists():
             print('No model found at {}'.format(self.model_dir))
             new_model = True
@@ -66,6 +71,9 @@ class Model:
         return data
 
     def _make_optimizer(self):
+        '''
+        Allows for custom tweaking of adam optimizer
+        '''
         # cannibalized from spacy/spacy/_ml/create_default_optimizer
         optimizer = self.nlp.begin_training(n_workers = 8)
         optimizer.learn_rate = self.cfg.get('learn_rate', 0.001)
@@ -77,6 +85,9 @@ class Model:
         return optimizer
 
     def fit(self, data_name, **kwargs):
+        '''
+        fits the model
+        '''
         self.cfg.update(kwargs)
 
         data = self.load_and_configure_training_data(data_name)
@@ -131,6 +142,9 @@ class Model:
                     self.evaluate_confusion(val_data)
 
     def in_progress_val(self, val_data):
+        '''
+        subsets val_data to create a quick (in progress) evauation metric
+        '''
         # subset validation set
         val_arr = np.array(val_data)
         inds = np.arange(val_arr.shape[0])
@@ -140,7 +154,8 @@ class Model:
 
 
     def score_texts(self, texts, verbose=True):
-
+        ''' Produces category probability scores for texts
+        '''
         scores = []
         docs = (self.nlp.tokenizer(text) for text in texts)
         N = len(texts)
@@ -162,6 +177,13 @@ class Model:
         return scores_df
 
     def evaluate_confusion(self, test_data):
+        '''
+        Creates evauation metrics for test_data.
+
+        test_data can either be in a (text, cats) zip, or
+        a dataframe with text in df['content'] and labels in
+        df['orient'] or df[['left','right']]
+        '''
         thresholds = {'left':0.5, 'right':0.5}
 
         # tediously handle list or pandas DataFrame input
@@ -197,6 +219,10 @@ class Model:
         return scores_df
 
     def predict_proba(self, df, verbose=True):
+        '''
+        Sklean style predict_proba
+        Expects df to have text in 'content' field
+        '''
         texts = df['content'].tolist()
         labels = self.labels
         scores = self.score_texts(texts, verbose)
@@ -205,6 +231,7 @@ class Model:
 
 
     def save(self, out_name=None):
+        'Save text categorization model to disk'
         if out_name:
             output_dir = DATA_PATH + 'model_cache/' + out_name
             print('saving to:')
@@ -258,7 +285,12 @@ def main(   data_name,
             glove=False,
             quiet=False
             ):
-
+    '''
+    Builds text categorization model with spacy
+    Loads model from model_name or creates new one
+    Trains, train/tests, or tests the model on provided 'data_name'
+    Saves model to out_name or model_name if not provided
+    '''
     if float_bias:
         label_type = 'catbias'
     else:
