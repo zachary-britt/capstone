@@ -149,6 +149,14 @@ source ~/.bashrc
 # python spacy_textcat.py reddit.pkl -m spacy-13.r3 -o spacy-13.r4 -minb 4.0 -maxb 128.0 -do 0.3 -rs under
 # python spacy_textcat.py reddit.pkl -m spacy-13.r4 -o spacy-13.r5 -minb 4.0 -maxb 128.0 -do 0.2 -rs under
 
-python spacy_textcat.py reddit.pkl -m spacy-14.r1 -o spacy-14.r1 -minb 4.0 -maxb 128.0 -do 0.6 -rs choose_n
+# python spacy_textcat.py reddit.pkl -m spacy-14.r1 -o spacy-14.r1 -minb 4.0 -maxb 128.0 -do 0.6 -rs choose_n
+
+
+#python spacy_textcat.py reddit.pkl -m spacy-15.r1 -minb 4.0 -maxb 128.0 -do 0.6 -rs under
+#python spacy_textcat.py reddit.pkl -m spacy-15.r1 -o spacy-15.r4 -minb 4.0 -maxb 64.0 -do 0.5 -rs under -ep 3
+python driver.py -m spacy-15.r4 -rs choose_n -maxN 5000 -do 0.4 -rr 6.0
+
+
+
 
 #

@@ -70,10 +70,10 @@ def build_confusion(y_true, y_pred, thresh):
 
 
 def calc_PRF(M):
-    tp = M.get('tp',1e-8)
-    fp = M.get('fp',1e-8)
-    tn = M.get('tn',1e-8)
-    fn = M.get('fn',1e-8)
+    tp = M.get('tp',1e-6)
+    fp = M.get('fp',1e-6)
+    tn = M.get('tn',1e-6)
+    fn = M.get('fn',1e-6)
 
     precision = tp / (tp + fp)
     recall = tp / (tp + fn)

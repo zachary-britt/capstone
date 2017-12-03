@@ -362,81 +362,81 @@ def load_and_configure_data(data_name, **cfg):
 
 
 
-def _peek_tagger(df, tag_loc, peek_size=250, get_peek=False):
-    if not tag_loc.exists():
-        l_inds = df[df.orient == 'left'].index.values
-        r_inds = df[df.orient == 'right'].index.values
-        c_inds = df[df.orient == 'center'].index.values
-
-        l_peek_inds = np.random.choice(l_inds, peek_size, replace=False)
-        r_peek_inds = np.random.choice(r_inds, peek_size, replace=False)
-        c_peek_inds = np.random.choice(c_inds, peek_size, replace=False)
-
-        peek_inds = np.hstack([l_peek_inds, r_peek_inds, c_peek_inds])
-
-        # save tags
-        tags = df.iloc[peek_inds]._id.values
-        np.save(tag_loc, tags)
-
-    else:
-        # load tags
-        tags = np.load(tag_loc)
-        # match saved object tags to df _ids
-        peek_inds = df[np.isin(df._id, tags, assume_unique=True)].index.values
-    all_inds = df.index.values
-    test_inds = np.setdiff1d(all_inds, peek_inds, assume_unique=True)
-
-    if get_peek:
-        peek_inds.sort()
-        return peek_inds
-    else:
-        np.random.shuffle(test_inds)
-        return test_inds
-
-
-def _load_peek_set(data_name, **cfg):
-
-    # optional argument unpacking
-    label_type = cfg.get('label_type', 'cats')
-    verbose = cfg.get('verbose',True)
-    labels = cfg.get('labels',['left','right'])
-    get_dates=cfg.get('dates')
-    zipit = cfg.get('zipit', True)
-
-
-    data_loc = DATA_PATH + data_name
-    df = pd.read_pickle(data_loc)
-
-    tag_loc = DATA_PATH + 'tag_dir/'+data_name[ :data_name.find('.')]+'_tags.npy'
-    tag_loc = Path(tag_loc)
-    if not tag_loc.exists():
-        if verbose: print('setting peek tags')
-    else:
-        if verbose: print('using saved peek tags')
-
-    peek_size = 250
-    peek_inds = _peek_tagger(df, tag_loc, peek_size=peek_size, get_peek=True )
-    df = df.iloc[peek_inds]
-
-    X = df.content.values
-    y = _format_y(df, **cfg)
-
-    test_data = [X, y]
-
-    if get_dates:
-        D = df.date.values
-        test_data.append(D)
-
-    if zipit:
-        test_data = _zipit(*test_data, **cfg)
-
-    return {'test':test_data}
+# def _peek_tagger(df, tag_loc, peek_size=250, get_peek=False):
+#     if not tag_loc.exists():
+#         l_inds = df[df.orient == 'left'].index.values
+#         r_inds = df[df.orient == 'right'].index.values
+#         c_inds = df[df.orient == 'center'].index.values
+#
+#         l_peek_inds = np.random.choice(l_inds, peek_size, replace=False)
+#         r_peek_inds = np.random.choice(r_inds, peek_size, replace=False)
+#         c_peek_inds = np.random.choice(c_inds, peek_size, replace=False)
+#
+#         peek_inds = np.hstack([l_peek_inds, r_peek_inds, c_peek_inds])
+#
+#         # save tags
+#         tags = df.iloc[peek_inds]._id.values
+#         np.save(tag_loc, tags)
+#
+#     else:
+#         # load tags
+#         tags = np.load(tag_loc)
+#         # match saved object tags to df _ids
+#         peek_inds = df[np.isin(df._id, tags, assume_unique=True)].index.values
+#     all_inds = df.index.values
+#     test_inds = np.setdiff1d(all_inds, peek_inds, assume_unique=True)
+#
+#     if get_peek:
+#         peek_inds.sort()
+#         return peek_inds
+#     else:
+#         np.random.shuffle(test_inds)
+#         return test_inds
+#
+#
+# def _load_peek_set(data_name, **cfg):
+#
+#     # optional argument unpacking
+#     label_type = cfg.get('label_type', 'cats')
+#     verbose = cfg.get('verbose',True)
+#     labels = cfg.get('labels',['left','right'])
+#     get_dates=cfg.get('dates')
+#     zipit = cfg.get('zipit', True)
+#
+#
+#     data_loc = DATA_PATH + data_name
+#     df = pd.read_pickle(data_loc)
+#
+#     tag_loc = DATA_PATH + 'tag_dir/'+data_name[ :data_name.find('.')]+'_tags.npy'
+#     tag_loc = Path(tag_loc)
+#     if not tag_loc.exists():
+#         if verbose: print('setting peek tags')
+#     else:
+#         if verbose: print('using saved peek tags')
+#
+#     peek_size = 250
+#     peek_inds = _peek_tagger(df, tag_loc, peek_size=peek_size, get_peek=True )
+#     df = df.iloc[peek_inds]
+#
+#     X = df.content.values
+#     y = _format_y(df, **cfg)
+#
+#     test_data = [X, y]
+#
+#     if get_dates:
+#         D = df.date.values
+#         test_data.append(D)
+#
+#     if zipit:
+#         test_data = _zipit(*test_data, **cfg)
+#
+#     return {'test':test_data}
 
 
 def _load_and_configure_test_data(data_name, **cfg):
     #redirect
-    if cfg.get('peek'):
-        return _load_peek_set(data_name, **cfg)
+    # if cfg.get('peek'):
+    #     return _load_peek_set(data_name, **cfg)
 
 
     data_loc = DATA_PATH + data_name
@@ -445,18 +445,18 @@ def _load_and_configure_test_data(data_name, **cfg):
     # optional argument unpacking
     label_type = cfg.get('label_type', 'cats')
     verbose = cfg.get('verbose',True)
-    peek = cfg.get('peek')
+    # peek = cfg.get('peek')
     labels = cfg.get('labels',['left','right'])
     get_dates=cfg.get('dates')
     zipit = cfg.get('zipit', True)
 
-
-    tag_loc = DATA_PATH + 'tag_dir/'+data_name[ :data_name.find('.')]+'_tags.npy'
-    tag_loc = Path(tag_loc)
-    if verbose: print('cutting peeked tags')
-
-    test_inds = _peek_tagger(df, tag_loc)
-    df = df.iloc[test_inds]
+    #
+    # tag_loc = DATA_PATH + 'tag_dir/'+data_name[ :data_name.find('.')]+'_tags.npy'
+    # tag_loc = Path(tag_loc)
+    # if verbose: print('cutting peeked tags')
+    #
+    # test_inds = _peek_tagger(df, tag_loc)
+    # df = df.iloc[test_inds]
     X = df.content.values
     y = _format_y(df, **cfg)
 
@@ -483,7 +483,7 @@ def make_ultra_cross_val(**cfg):
 
     for test_source in sources:
         df_test = all_arts_df[all_arts_df.source == test_source]
-
+        df_test.reset_index(inplace=True)
         art_df = all_arts_df[all_arts_df.source != test_source]
 
         '''Set up reddit/ remaining articles mix'''
@@ -499,7 +499,7 @@ def make_ultra_cross_val(**cfg):
         red_cent = reddit_df[reddit_df['orient']=='center']
 
         red_N = min(red_left.shape[0], red_right.shape[0])
-        art_N = red_N // reddit_ratio
+        art_N = int(red_N / reddit_ratio)
 
 
         art_left = art_left.loc[np.random.choice(art_left.index.values, art_N)]

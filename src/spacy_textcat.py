@@ -74,7 +74,6 @@ class Model:
         optimizer.eps = self.cfg.get('optimizer_eps', 1e-08)
         optimizer.L2 = self.cfg.get('L2_penalty', 1e-6)
         optimizer.max_grad_norm = self.cfg.get('grad_norm_clip', 1.)
-
         return optimizer
 
     def fit(self, data_name, **kwargs):
@@ -175,8 +174,8 @@ class Model:
                 is_lefts = test_data['left']
                 is_rights = test_data['right']
             elif 'orient' in test_data.columns:
-                is_lefts = test_data['orient'].values.where('left',1,0)
-                is_rights = test_data['orient'].values.where('right',1,0)
+                is_lefts = np.where(test_data['orient'].values == 'left',1,0)
+                is_rights = np.where(test_data['orient'].values == 'right',1,0)
             else:
                 print('test data label column not found')
                 return
@@ -195,7 +194,7 @@ class Model:
 
             M = eval_utils.build_confusion(real_labels, label_scores, thresh)
             eval_utils.print_confusion_report(M, label)
-        return
+        return scores_df
 
     def predict_proba(self, df, verbose=True):
         texts = df['content'].tolist()

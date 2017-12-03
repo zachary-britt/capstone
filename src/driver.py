@@ -1,9 +1,14 @@
 import baseline_model
+import pandas as pd
 import zutils
 import eval_utils
 from spacy_textcat import Model as Spacecat
 import plac
 import ipdb
+from pathlib import Path
+from pprint import pprint
+import os
+DATA_PATH = os.environ['DATA_PATH']
 
 def run_baseline_model():
     baseline_model.main()
@@ -21,11 +26,10 @@ def run_baseline_model():
     float_bias=('Use float proportional bias', 'flag', 'fb', bool),
     epochs=("Training epochs", 'option', 'ep', int),
     quiet=('Dont print all over everything','flag','q', bool),
-    reddit_ratio=('ratio of reddit comments to articles in mix','option','rr',float),
-    val_size=('train_set validation proportion', 'option','vs', float)
+    reddit_ratio=('ratio of reddit comments to articles in mix','option','rr',float)
 )
-def main(   base_model_name='spacy-13.r5',
-            out_name='cross-val-models/',
+def main(   base_model_name='spacy-15.r4',
+            out_name='cross_val_models/',
             resampling='under',
             maxN=10000,
             dropout=0.5,
@@ -35,10 +39,9 @@ def main(   base_model_name='spacy-13.r5',
             float_bias=False,
             epochs=1,
             quiet=False,
-            reddit_ratio=5,
-            val_size=0.05):
+            reddit_ratio=5.0):
 
-    #zutils.make_ultra_cross_val(reddit_ratio=reddit_ratio)
+    zutils.make_ultra_cross_val(reddit_ratio=reddit_ratio)
 
 
     if float_bias:
@@ -51,20 +54,41 @@ def main(   base_model_name='spacy-13.r5',
                 'epochs':epochs,'verbose': not quiet,'L2_penalty':L2_penalty, "zipit":True,
                 }
 
+    out_dir = DATA_PATH + 'model_cache/'+ out_name
+    out_dir = Path(out_dir)
+    if not out_dir.exists():
+        out_dir.mkdir()
 
     sources = ['hp','mj','od','ai','reu','nyt','fox','bb','gp','cnn']
     for source in sources:
+        print('\n\nCROSS VALIDATION MODEL')
+        print('Holdout set: {}\n'.format(source))
         train_name = 'cross_vals/{}/train.pkl'.format(source)
         test_name = 'cross_vals/{}/test.pkl'.format(source)
         model_out_name = out_name + source
         cfg['out_name'] = model_out_name
+        cfg['train_all'] = True
+        cfg['test_all'] = False
 
         spacecat = Spacecat(base_model_name, **cfg)
         spacecat.fit(train_name, **cfg)
-        spacecat.save(out_name)
+        spacecat.save()
 
-        test_data = zutils.load_and_configure_data(test_name, **spacecat.cfg)['test']
-        spacecat.evaluate_confusion(data)
+        cfg['train_all'] = False
+        cfg['test_all'] = True
+        cfg['catnest'] = True
+        # test_data = zutils.load_and_configure_data(test_name, **cfg)['test']
+        test_data = pd.read_pickle(DATA_PATH+'cross_vals/{}/test.pkl'.format(source))
+        #test_data = test_data.head(1000)
+        test_scores = spacecat.evaluate_confusion(test_data)
+        test_df = pd.read_pickle(DATA_PATH+'cross_vals/{}/test.pkl'.format(source))
+        #test_df = test_df.head(1000)
+        #ipdb.set_trace()
+        test_df['left_pred'] = test_scores['left']
+        test_df['right_pred'] = test_scores['right']
+        print('\n{} predicted scores:\n'.format(source))
+        pprint(test_df[['left_pred','right_pred']].describe())
+        test_df.to_pickle(DATA_PATH+'cross_vals/{}/test_scores.pkl'.format(source))
 
 if __name__ == '__main__':
     plac.call(main)
