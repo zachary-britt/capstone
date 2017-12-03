@@ -476,16 +476,15 @@ def make_ultra_cross_val(**cfg):
 
     sources = ['hp','mj','od','ai','reu','nyt','fox','bb','gp','cnn']
 
-    art_df = pd.read_pickle('../data/articles.pkl')
-    hold_df = pd.read_pickle('../data/holdout.pkl')
-    cnn_df = pd.read_pickle('../data/cnn.pkl')
-    all_arts_df = pd.concat([art_df, hold_df])
-    reddit_df = pd.read_pickle('../data/reddit.pkl')
+    all_arts_df = pd.read_pickle(DATA_PATH + 'full_corpus.pkl')
+    reddit_df = pd.read_pickle(DATA_PATH + 'reddit.pkl')
+
+    cv_dir = DATA_PATH + 'cross_vals/'
 
     for test_source in sources:
         df_test = all_arts_df[all_arts_df.source == test_source]
 
-        art_df = art_df[art_df.source != test_source]
+        art_df = all_arts_df[all_arts_df.source != test_source]
 
         '''Set up reddit/ remaining articles mix'''
 
@@ -519,6 +518,15 @@ def make_ultra_cross_val(**cfg):
         np.random.shuffle(inds)
 
         df_train = df_train.iloc[inds]
+
+
+        ''' save to pickles '''
+        out_dir = cv_dir + test_source
+        out_dir = Path(out_dir)
+        if not out_dir.exists():
+            out_dir.mkdir()
+        df_train.to_pickle(out_dir.joinpath('train.pkl'))
+        df_test.to_pickle(out_dir.joinpath('test.pkl'))
 
 
 ''' TERMINAL OUTPUT UTILS'''
@@ -597,11 +605,13 @@ class ProgressBar:
 
 if __name__ == '__main__':
 
-    N = 100
-    n = 0
-    PB = ProgressBar('Bar', N)
-    while n < N:
-        n += 1
-        PB.progress(n)
-        time.sleep(0.02)
-    PB.kill()
+    # N = 100
+    # n = 0
+    # PB = ProgressBar('Bar', N)
+    # while n < N:
+    #     n += 1
+    #     PB.progress(n)
+    #     time.sleep(0.02)
+    # PB.kill()
+    cfg = {'reddit_ratio':5}
+    make_ultra_cross_val(**cfg)

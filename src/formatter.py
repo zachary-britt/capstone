@@ -87,12 +87,14 @@ def universal_text_cleaner(text):
             'Donald Trump':'Trump',
             'Donald':'Trump',
 
-            'EXCLUSIVE –':'',
-            'EXCLUSIVE–':'',
-            'LISTEN:':'',
-            'VIDEO:':'',
+            'EXCLUSIVE':'',
+            'LISTEN':'',
+            'VIDEO':'',
             ' - Reuters interview':'',
             'Reuters interview' :'',
+            'WATCH':'',
+            'BREAKING':'',
+            'REPORT':'',
 
             # Maybe do the same for senators, representatives, Clinton.........
 
@@ -146,9 +148,9 @@ def universal_text_stripper(text):
     i = text.find(s)
     if i != -1:
         text = text[i+len(s):]
-    text = text.replace('\n  \n','\n')
 
-    strip_chars = ' \n ,-―'
+
+    strip_chars = ' \n,-―:'
     text = text.strip(strip_chars)
 
     start_afters = ['WASHINGTON, ', '(AP),  ', '(REUTERS)']
@@ -159,6 +161,14 @@ def universal_text_stripper(text):
             text = text[i+len(start_after):]
             intro = intro[i+len(start_after):]
 
+
+
+    # remove double_new_lines
+    lines = text.split('\n')
+    lines = [line.strip(' ') for line in lines]
+    lines = [line for line in lines if line != '']
+    text = '\n'.join(lines)
+
     return text
 
 def universal_stripper(df):
@@ -167,7 +177,7 @@ def universal_stripper(df):
     df['content'] = pool.map(universal_text_stripper, df['content'])
 
     if 'title' in df.columns:
-        df['title'] = pool.map(universal_text_cleaner,  df['title'])
+        df['title'] = pool.map(universal_text_stripper,  df['title'])
 
     pool.close()
     pool.join()
@@ -480,7 +490,21 @@ def od_clean(df):
 
 def ai_clean_text(text):
     ''' Clean addicting info text '''
-    #TODO
+    #TODO Fill this out
+
+    kill_from_args = [  'Getty Images',
+                        'Image via',
+                        'Featured Image',
+
+                        ]
+
+    for kill_from_arg in kill_from_args:
+        kill_args = [text, kill_from_arg]
+        text = kill_from_line(*kill_args)
+
+
+    text = text.replace('Addicting Info', 'this newspaper')
+
     return text
 
 def ai_clean(df):
@@ -493,6 +517,20 @@ def ai_clean(df):
 def gp_clean_text(text):
     #TODO
     ''' Clean gateway pundit text '''
+
+    kill_from_args = [  'UPDATE: ',
+                        'Read the whole thing here.',
+                        'Photo image via',
+                        'H/T:'
+                        ]
+
+    for kill_from_arg in kill_from_args:
+        kill_args = [text, kill_from_arg]
+        text = kill_from_line(*kill_args)
+
+
+    text = text.replace('Gateway Pundit', 'this newspaper')
+
     return text
 
 def gp_clean(df):
@@ -556,6 +594,56 @@ def nyt_clean(df):
     df['content'] = pool.map(nyt_clean_text, df['content'])
     return df
 
+def cnn_clean_text(text):
+    ''' Clean cnn text '''
+
+
+    sign_ins =  [   'WASHINGTON — ',
+                    'CHICAGO — '
+                ]
+    for sign_in in sign_ins:
+        i = text.find(sign_in)
+        if i != -1:
+            text = text[i+len(sign_in):]
+
+    kill_from_args = [  'Follow him on Twitter ',
+                        'Sign up for ',
+                        'contributed reporting',
+                        'Get politics and Washington news updates',
+                        'reported from Washington'
+                     ]
+
+    for kill_from_arg in kill_from_args:
+        kill_args = [text, kill_from_arg]
+        text = kill_from_line(*kill_args)
+
+
+    sign_offs = [   '\n Read the full ',
+                    '\n A version of this article ',
+                    ' \n Follow ',
+                    'CORRECTION',
+                    'UPDATE',
+                ]
+
+    for sign_off in sign_offs:
+        i = text.find(sign_off)
+        if i != -1:
+            text = text[:i]
+    text = text.replace('CNN', 'this newspaper')
+    text = text.replace(' --', ',')
+    text.replace('  ', '\n')
+
+    return text
+
+
+
+def cnn_clean(df):
+    ''' Clean cnn text '''
+    from formatter import cnn_clean_text
+    pool = Pool(4)
+    df['content'] = pool.map(cnn_clean_text, df['content'])
+    return df
+
 
 def find_leak(df, keyword):
     ''' For data munging, find a potentially leaky text segment '''
@@ -574,6 +662,17 @@ def cull_shorts(df, min_length=400):
     df.reset_index(inplace=True)
     return df
 
+
+def save_full_corpus():
+    in_dir=DATA_PATH
+    standard_art_df = pd.read_pickle(in_dir+'articles.pkl')
+    hold_art_df = pd.read_pickle(in_dir+'holdout.pkl')
+    cnn_df = pd.read_pickle(in_dir+'cnn.pkl')
+
+    full_df = pd.concat([standard_art_df, hold_art_df, cnn_df], ignore_index=True)
+    full_df.to_pickle(in_dir+'full_corpus.pkl')
+    print('In total, your full article corpus has: {} articles. Be careful not to leak!'
+            .format(full_df.shape[0]))
 
 
 def main(out_dir=DATA_PATH):
@@ -652,13 +751,22 @@ def main(out_dir=DATA_PATH):
     print("Cleaned holdout articles, you've got {} of them".format(hdf.shape[0]))
 
     udf = dl.ultra_holdout()
-    udf.rename(columns={'contents':'content'}, inplace=True)
     udf = universal_cleaner(udf)
+    udf = cnn_clean(udf)
     udf = universal_stripper(udf)
     udf = cull_shorts(udf)
-    udf.to_pickle(out_dir+'cnn.pkl')
+    udf.to_pickle(out_dir+'udf.pkl')
+
+    # now instead set as central
+    cnn_df = udf
+    cnn_df['bias']=0
+    cnn_df['orient'] = 'center'
+    cnn_df.to_pickle(out_dir+'cnn.pkl')
 
     print("Cleaned cnn, you have {} cnn articles, have fun".format(udf.shape[0]))
+
+    save_full_corpus()
+
 
 if __name__ == '__main__':
     plac.call(main)

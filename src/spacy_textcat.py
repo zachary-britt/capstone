@@ -53,6 +53,7 @@ class Model:
                 self.textcat.add_label(label)
         else:
             print('Loading pre-trained nlp from {}'.format(self.model_dir))
+            # ipdb.set_trace()
             self.nlp = spacy.load(self.model_dir)
             self.textcat = self.nlp.get_pipe('textcat')
 
@@ -211,6 +212,8 @@ class Model:
             output_dir = Path(output_dir)
             if not output_dir.exists():
                 output_dir.mkdir()
+        elif self.cfg.get('out_name'):
+            output_dir = DATA_PATH + 'model_cache/' + self.cfg.get('out_name')
         else:
             output_dir = self.model_dir
             print('No output directory given, saving to model directory:')

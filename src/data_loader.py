@@ -119,7 +119,9 @@ def load_reddit_no_center():
 
 def ultra_holdout():
     cnn_df = zutils.open_as_df('cnn')
+    cnn_df.rename(columns={'contents':'content'}, inplace=True)
     return cnn_df
+
 
 
 if __name__ == '__main__':
