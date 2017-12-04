@@ -104,16 +104,16 @@ is interpreted and transformed into a (13, 300) matrix of floats, one row vector
 
 
 
-https://spacy.io/usage/training#section-textcat
-
-<br>
 
 ### Model training
 
+With the text embedded into vectors we can now either take those vectors to Keras for neural network training or we can stay in spaCy and use spaCy's neural network model. 
+
+https://spacy.io/usage/training#section-textcat
+
+
 [src/spacy_textcat](https://github.com/zachary-britt/text2slant/blob/master/src/spacy_textcat.py "textcat")
 
-[src/spacy_textcat](https://github.com/zachary-britt/text2slant/blob/master/src/runner_script
- "textcat")
 
 
 
