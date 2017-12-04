@@ -94,18 +94,26 @@ At this stage the reddit comments are similarily also stripped of links, and the
 
 ### spaCy NLP
 
-With the text obfuscated we move on to processing the text in the spaCy NLP ecosystem. Instead of relearning how to read from scratch
+With the text obfuscated we move on to processing the text in the spaCy NLP ecosystem. Instead of relearning how to read from scratch I used spaCy's [prebuilt model](https://spacy.io/models/en#en_core_web_lg) trained on the [common crawl](http://commoncrawl.org/). The model is useful in translating written text into dense vectors. I.e. spacy reads the text, annotates it (entity tags, noun chunks, part of speech tagging, syntax parsing ...) and uses these annotation to produce a 300 dimensional vector of floats for each word. 
 
-https://spacy.io/usage/training#section-textcat
+'Flynn is the first member of Trump’s administration to plead guilty.'
 
-<br>
+is interpreted and transformed into a (13, 300) matrix of floats, one row vector for each word in:
+
+[Flynn, is, the, first, member, of, Trump, ’s, administration, to, plead, guilty, .]
+
+
+
 
 ### Model training
 
+With the text embedded into vectors we can now either take those vectors to Keras for neural network training or we can stay in spaCy and use spaCy's neural network model. 
+
+https://spacy.io/usage/training#section-textcat
+
+
 [src/spacy_textcat](https://github.com/zachary-britt/text2slant/blob/master/src/spacy_textcat.py "textcat")
 
-[src/spacy_textcat](https://github.com/zachary-britt/text2slant/blob/master/src/runner_script
- "textcat")
 
 
 
