@@ -12,7 +12,8 @@ import os
 DATA_PATH = os.environ['DATA_PATH']
 
 import zutils
-
+import eval_utils as ev
+import matplotlib.pyplot as plt
 
 class BaselineCLF:
     def __init__(self, **cfg):
@@ -59,7 +60,8 @@ class BaselineCLF:
         # training_data = self._data_cfg(training_data)
 
         peek = cfg.get('peek_cfg')
-        testing_data = zutils.load_and_configure_data('holdout.pkl', peek=peek , **cfg)['test']
+
+        testing_data = zutils.load_and_configure_data('holdout.pkl', test_all=True, **cfg)['test']
         # testing_data = self._data_cfg(testing_data)
 
         data = {'train':training_data, 'test':testing_data, 'weights':class_weights}
@@ -81,6 +83,8 @@ class BaselineCLF:
         y_t = np.vstack(y_t)
         y_e = np.vstack(y_e)
 
+        self.y_trues={}
+        self.y_preds={}
 
         for i,label in enumerate(self.labels):
             print("\n\n{} VS ALL".format(label.upper()))
@@ -88,10 +92,14 @@ class BaselineCLF:
             y_t_1d = y_t[:,i]
             y_e_1d = y_e[:,i]
 
+            self.y_trues[label] = y_e_1d
+
             self.clf[label].fit(X_t, y_t_1d, **{'nb__sample_weight':W})
 
             y_train_preds = self.clf[label].predict(X_t)
             y_test_pred = self.clf[label].predict(X_e)
+
+            self.y_preds[label] =  self.clf[label].predict_proba(X_e)
 
             train_report= classification_report(y_t_1d, y_train_preds, target_names=['not {}'.format(label),label])
             test_report = classification_report(y_e_1d, y_test_pred, target_names=['not {}'.format(label),label])
@@ -104,16 +112,15 @@ class BaselineCLF:
 
 
 
-
-def main():
+if __name__ == '__main__':
     cfg = { 'use_reddit':False,
-            'no_center':True,
-            'reddit_weight':0.2,
-            'peek_cfg':True
+            'no_center':False,
+            'reddit_weight':0.2
             }
     clf = BaselineCLF(**cfg)
     clf.train(**cfg)
 
+    ev.make_roc( clf.y_trues['left'], clf.y_preds['left'][:,1], 'left' )
+    ev.make_roc( clf.y_trues['right'], clf.y_preds['right'][:,1], 'right' )
 
-if __name__ == '__main__':
-    plac.call(main)
+    plt.show()

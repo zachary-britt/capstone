@@ -177,15 +177,20 @@ def build_profile(model_name):
 
 
 def scale_back_reu(scores):
+    mid_ = scores.loc['reu']
+    shift = -mid_
+    scores = scores + shift
+
     min_ = scores.min()
     max_ = scores.max()
-    mid_ = scores.loc['reu']
-    range_ = max_ - min_
-    scale = 2/range_
-    shift = -mid_
-    new_scores = scores + shift
-    new_scores = new_scores * scale
-    return new_scores
+
+    for source,score in zip(scores.index, scores):
+        if score<0:
+            scores.loc[source] = score * 1/(-min_)
+        else:
+            scores.loc[source] = score * 1/max_
+
+    return scores
 
 
 if __name__ == '__main__':
