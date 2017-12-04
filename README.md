@@ -92,6 +92,7 @@ After links and strange introductory - conclusion punctuation are stripped, the 
 
 At this stage the reddit comments are similarily also stripped of links, and the comments from political subreddits are filtered for length. See [src/formatter](https://github.com/zachary-britt/text2slant/blob/master/src/formatter.py "formatting")
 
+
 ### spaCy NLP
 
 With the text obfuscated we move on to processing the text in the spaCy NLP ecosystem. Instead of relearning how to read from scratch I used spaCy's [prebuilt model](https://spacy.io/models/en#en_core_web_lg) trained on the [common crawl](http://commoncrawl.org/). The model is useful in translating written text into dense vectors. I.e. spacy reads the text, annotates it (entity tags, noun chunks, part of speech tagging, syntax parsing ...) and uses these annotation to produce a 300 dimensional vector of floats for each word. 
@@ -103,21 +104,20 @@ is interpreted and transformed into a (13, 300) matrix of floats, one row vector
 [Flynn, is, the, first, member, of, Trump, ’s, administration, to, plead, guilty, .]
 
 
-
-
 ### Model training
 
 With the text embedded into vectors we can now either take those vectors to Keras for neural network training or we can stay in spaCy and use spaCy's neural network model. 
 
 https://spacy.io/usage/training#section-textcat
 
-
 [src/spacy_textcat](https://github.com/zachary-britt/text2slant/blob/master/src/spacy_textcat.py "textcat")
 
+The spacy_textcat.Model class wraps and handles the training process. The model gets trained via scripts in [src/runner_script](https://github.com/zachary-britt/text2slant/blob/master/src/runner_script) which makes it easy to setup a training sequence which caches the model at each step.
 
-
+spaCy is finiky about the formatting of the data so I also wrote a long 
 
 ### Model Performance 
+
 
 
 
