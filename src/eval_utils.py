@@ -7,6 +7,10 @@ import ipdb
 
 
 def make_roc(y_true, y_pred, label, N=None):
+    '''
+    Produces ROC curve. Call multiple times if needed. Requires user to plt.show()
+
+    '''
     inds = np.argsort(y_pred)
     y_pred = y_pred[inds]
     y_true = y_true[inds]
@@ -50,7 +54,9 @@ def make_roc(y_true, y_pred, label, N=None):
 
 
 def build_confusion(y_true, y_pred, thresh):
-
+    '''
+    Creates a confusion matrix (as a dictionary)
+    '''
     y_true = np.array(y_true)
     y_pred = np.array(y_pred)
 
@@ -70,6 +76,9 @@ def build_confusion(y_true, y_pred, thresh):
 
 
 def calc_PRF(M):
+    '''
+    Calculates precision, recall and F1 score
+    '''
     tp = M.get('tp',1e-6)
     fp = M.get('fp',1e-6)
     tn = M.get('tn',1e-6)
@@ -83,7 +92,9 @@ def calc_PRF(M):
 
 
 def print_confusion_report(M, name=None):
-
+    '''
+    Nicely prints a the PRF report
+    '''
     if name:
         print('\nScores for: {}'.format(name))
 
@@ -143,18 +154,6 @@ def score_average(texts, models):
 #     ani = FuncAnimation(fig, update, frames=iter(rocs), blit=True, init_func=init)
 #     plt.show()
 
-
-
-def scale_back_reu(scores):
-    min_ = scores.min()
-    max_ = scores.max()
-    mid_ = scores.loc['reu']
-    range_ = max_ - min_
-    scale = 2/range_
-    shift = -mid_
-    new_scores = scores + shift
-    new_scores = new_scores * scale
-    return new_scores
 
 
 def build_profile(model_name):
