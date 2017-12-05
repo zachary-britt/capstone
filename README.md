@@ -1,6 +1,16 @@
 # text2slant
 
-## Looking for bias in news articles via NLP.
+# Table of Contents
+1. [Introduction](#introduction)
+2. [Web-scraping](#web_scraping)
+3. [Pre-processing](#pre_processing)
+4. [spaCy NLP](#spacy)
+5. [Model Training](#training)
+6. [Model Performance](#performance)
+7. [Next Steps](#next_steps)
+
+
+## Looking for bias in news articles via NLP. <a name="introduction"></a>
 
 By reading in sentences from a news article into an RNN can we mathematically map the ideology of the article? The issue of bias in journalism has long been a hot button issue, but it has blown up in the Trump era with vitrolic attacks coming from the very top on political reporting.
 
@@ -14,7 +24,7 @@ My goal is to tackle this by reading the text itself.
 
 
 
-### Web-scraping
+### Web-scraping <a name="web_scraping"></a>
 
 The first major component of the project was data collection.
 
@@ -45,7 +55,7 @@ but left them as a holdout set.
 
 These sources required customized web scraping [src/scrapers/](https://github.com/zachary-britt/text2slant/tree/master/src/scrapers "scrapers").
 
-To further generalize I also downloaded a year of reddit comments and partitioned them into left wing, right wing, and non-political subreddits. The comments were filtered for length and and high score to ensure that they both fit the ethos of their subreddit and are long enough that they make sense out of context.
+To further generalize I also downloaded a year of reddit comments from [pushshift](https://files.pushshift.io/reddit/comments/)and partitioned them into left wing, right wing, and non-political subreddits. The comments were filtered for length and and high score to ensure that they both fit the ethos of their subreddit and are long enough that they make sense out of context. 
 
 1. Right wing subs:
 	* /r/The_Donald 
@@ -76,7 +86,7 @@ The political comments are then filtered to include at least one recognized poli
 All of this data is saved to a mongo database for convenient storage.
 
 
-### Pre-processing
+### Pre-processing <a name="pre_processing"></a>
 
 The next component of the project was pre-processing the text in a way which removed any obvious "tells" as to the source of the article. The text is loaded from mongo into a pandas dataframe and then stripped of source consistent introductory/ending sentences 
 
@@ -93,7 +103,7 @@ After links and strange introductory - conclusion punctuation are stripped, the 
 At this stage the reddit comments are similarily also stripped of links, and the comments from political subreddits are filtered for length. See [src/formatter](https://github.com/zachary-britt/text2slant/blob/master/src/formatter.py "formatting")
 
 
-### spaCy NLP
+### spaCy NLP <a name="spacy"></a>
 
 With the text obfuscated we move on to processing the text in the spaCy NLP ecosystem. Instead of relearning how to read from scratch I used spaCy's [prebuilt model](https://spacy.io/models/en#en_core_web_lg) trained on the [common crawl](http://commoncrawl.org/). The model is useful in translating written text into dense vectors. I.e. spacy reads the text, annotates it (entity tags, noun chunks, part of speech tagging, syntax parsing ...) and uses these annotation to produce a 300 dimensional vector of floats for each word. 
 
@@ -104,7 +114,7 @@ is interpreted and transformed into a (13, 300) matrix of floats, one row vector
 [Flynn, is, the, first, member, of, Trump, ’s, administration, to, plead, guilty, .]
 
 
-### Model training
+### Model training <a name="training"></a>
 
 With the text embedded into vectors we can now either take those vectors to Keras for neural network training or we can stay in spaCy and use spaCy's neural network model. 
 
@@ -116,12 +126,12 @@ The spacy_textcat.Model class wraps and handles the training process. The model 
 
 spaCy is finiky about the formatting of the data so I also wrote a long 
 
-### Model Performance 
+### Model Performance <a name="performance"></a>
 
 
 
 
-### Model next steps:
+### Next steps: <a name="next_steps"></a>
 
 Bin content by date and topic to leverage variance in reporting.  
 
