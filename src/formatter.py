@@ -659,7 +659,7 @@ def cull_shorts(df, min_length=400):
     lens = np.array(df.content.apply(len))
     inds = np.argwhere(lens > min_length).ravel()
     df = df.iloc[inds]
-    df.reset_index(inplace=True)
+    df.reset_index(inplace=True, drop=True)
     return df
 
 
@@ -727,7 +727,7 @@ def main(out_dir=DATA_PATH):
     rdf = pd.read_pickle('../data/reddit.pkl')
     '''Reddit dfs no center'''
     rncdf = rdf[rdf.bias != 0]
-    rncdf.reset_index(inplace=True)
+    rncdf.reset_index(inplace=True, drop=True)
     rncdf.to_pickle(out_dir+'reddit_no_center.pkl')
 
     print("Cleaned reddit no center comments, you've got {} of them".format(rncdf.shape[0]))

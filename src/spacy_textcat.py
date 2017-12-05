@@ -49,16 +49,13 @@ class Model:
             print('Loading fresh nlp from {}'.format(spacy_model_name))
             self.nlp = spacy.load(spacy_model_name)
 
-            low_data = self.cfg.get('low_data')
-            pipe_cfg = {'low_data', low_data}
             self.textcat = self.nlp.create_pipe('textcat')
-
+            self.textcat.cfg['low_data'] = self.cfg.get('low_data')
             self.nlp.add_pipe(self.textcat, last=True)
             for label in self.labels:
                 self.textcat.add_label(label)
         else:
             print('Loading pre-trained nlp from {}'.format(self.model_dir))
-            # ipdb.set_trace()
             self.nlp = spacy.load(self.model_dir)
             self.textcat = self.nlp.get_pipe('textcat')
 
@@ -67,6 +64,11 @@ class Model:
 
 
     def load_and_configure_training_data(self, data_name):
+
+        rr = self.cfg.get('reddit_ratio')
+        if rr:
+            zutils.red_dominant(**self.cfg)
+
         data = zutils.load_and_configure_data(data_name, **self.cfg)
         return data
 
@@ -75,6 +77,7 @@ class Model:
         Allows for custom tweaking of adam optimizer
         '''
         # cannibalized from spacy/spacy/_ml/create_default_optimizer
+
         optimizer = self.nlp.begin_training(n_workers = 8)
         optimizer.learn_rate = self.cfg.get('learn_rate', 0.001)
         optimizer.beta1 = self.cfg.get('optimizer_B1', 0.9)
@@ -96,12 +99,14 @@ class Model:
 
         optimizer = self._make_optimizer()
 
+        print(self.textcat.cfg)
+
         print("Training the model...")
 
         for i in range(self.cfg.get('epochs', 1)):
             total_seen = 0
             n = 0
-
+            k=1
             bar = zutils.ProgressBar('Epoch: {}'.format(i+1), len(train_data))
             losses = {}
 
@@ -117,23 +122,25 @@ class Model:
                                 losses=losses)
                 bs = len(texts)
                 total_seen += bs
-                loss_str = 'Avg Loss: {0:.3f}'.format(100*losses['textcat'] / (j+1))
+                loss_str = 'Avg Loss: {0:.3f}'.format(100*losses['textcat'] / (k))
                 bar.progress(total_seen, loss_str)
-
+                k+=1
 
                 ''' run test on subset of validation set so you don't get bored '''
-                if len(val_data) and self.cfg.get('verbose'): #check val data not empty
-                    n += bs
-                    if n >= 10000:
-                        n=0
+                n += bs
+                if n >= 10000:
+                    n=0
+                    if len(val_data) and self.cfg.get('verbose'): #check val data not empty
+
                         t = bar.kill(loss_str)
                         with self.textcat.model.use_params(optimizer.averages):
                             self.in_progress_val(val_data)
 
                         bar = zutils.ProgressBar('Epoch: {}'.format(i+1), len(train_data))
                         bar.start_time -= t
-                # end epoch
-
+                    losses={}
+                    k=1
+            # end epoch
             bar.kill(loss_str)
 
             # end of epoch report
@@ -259,12 +266,14 @@ class Model:
     maxN=('max class size for choose N resampling', 'option', 'maxN', int),
     dropout=("Dropout rate to use", 'option', 'do', float),
     L2_penalty=("L2 regularization param", 'option', 'l2', float),
+    learn_rate=('Learning rate used by optimizer','option','lr', float),
     min_batch_size=("Minimum Batch size", 'option', "minb", float),
     max_batch_size=("Maximum Batch size", 'option', "maxb", float),
     float_bias=('Use float proportional bias', 'flag', 'fb', bool),
     low_data=('simplified model','flag', 'low_d', bool),
     epochs=("Training epochs", 'option', 'ep', int),
     glove=("use gloVe vectors", 'flag','gl', bool),
+    reddit_ratio=('ratio of reddit to arts', 'option', 'rr', float),
     quiet=('Dont print all over everything','flag','q', bool)
 )
 def main(   data_name,
@@ -277,12 +286,14 @@ def main(   data_name,
             maxN=2000,
             dropout=0.6,
             L2_penalty=1e-6,
+            learn_rate=0.001,
             min_batch_size=4.,
             max_batch_size=16.,
             float_bias=False,
             low_data=False,
             epochs=1,
             glove=False,
+            reddit_ratio=0.0,
             quiet=False
             ):
     '''
@@ -299,8 +310,9 @@ def main(   data_name,
     kwargs = {  'out_name':out_name, 'reset':reset, 'test_all':test_all,
                 'train_all':train_all,'resampling':resampling,'dropout':dropout,
                 'minb':min_batch_size,'maxb':max_batch_size, 'label_type':label_type,
-                'epochs':epochs,'verbose': not quiet, 'glove':glove,
-                'L2_penalty':L2_penalty, "zipit":True, 'max_class_size': maxN}
+                'epochs':epochs,'verbose': not quiet, 'glove':glove, 'low_data':low_data,
+                'L2_penalty':L2_penalty, 'learn_rate':learn_rate,"zipit":True,
+                'max_class_size': maxN, 'reddit_ratio':reddit_ratio}
 
     model = Model(model_name, **kwargs)
 
@@ -318,18 +330,18 @@ def main(   data_name,
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     scores, data = plac.call(main)
-    if scores:
+    if scores is not None:
 
         text, y_true = zip(*data)
         y_true = [y['cats'] for y in y_true]
         r_true = np.array([y['right'] for y in y_true])
         l_true = np.array([y['left'] for y in y_true])
 
-        r_pred = np.array([score['right'] for score in scores])
-        l_pred = np.array([score['left'] for score in scores])
+        r_pred = scores['right'].values
+        l_pred = scores['left'].values
 
-        with open('my_thing.pkl','wb') as f:
-            pickle.dump([r_true, l_true, r_pred, l_pred], f)
+        # with open('my_thing.pkl','wb') as f:
+        #     pickle.dump([r_true, l_true, r_pred, l_pred], f)
 
         eval_utils.make_roc(r_true, r_pred, 'right')
         eval_utils.make_roc(l_true, l_pred, 'left')

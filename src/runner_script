@@ -155,7 +155,42 @@ source ~/.bashrc
 #python spacy_textcat.py reddit.pkl -m spacy-15.r1 -minb 4.0 -maxb 128.0 -do 0.6 -rs under
 #python spacy_textcat.py reddit.pkl -m spacy-15.r1 -o spacy-15.r4 -minb 4.0 -maxb 64.0 -do 0.5 -rs under -ep 3
 #python driver.py -m spacy-15.r4 -rs choose_n -maxN 5000 -do 0.4 -rr 6.0
-python driver.py -m spacy-15.r4 -rs choose_n -maxN 10000 -do 0.3 -rr 5.0
+#python driver.py -m spacy-15.r4 -rs choose_n -maxN 10000 -do 0.3 -rr 5.0
+
+# python spacy_textcat.py reddit.pkl -m spacy-21.r1 -o spacy-21.r1 -rs under -gl -low_d -fb -rt
+# python spacy_textcat.py reddit.pkl -m spacy-21.r1 -o spacy-21.r2 -rs under -do 0.4
+# python spacy_textcat.py reddit.pkl -m spacy-21.r2 -o spacy-21.r3 -rs under -do 0.2
+# python spacy_textcat.py reddit.pkl -m spacy-21.r3 -o spacy-21.r4 -rs under -do 0.4
+# python spacy_textcat.py reddit.pkl -m spacy-21.r4 -o spacy-21.r5 -rs under -do 0.3
+
+# python spacy_textcat.py red_dominant.pkl -m spacy-21.r5 -o spacy-21.r5m1v1 -rs choose_n -maxN 10000 -do 0.3 -lr 0.0005 -rr 8 -tr
+# python spacy_textcat.py red_dominant.pkl -m spacy-21.r5 -o spacy-21.r5m1v2 -rs choose_n -maxN 10000 -do 0.3 -lr 0.0005 -rr 8 -tr -fb
+# python spacy_textcat.py red_dominant.pkl -m spacy-21.r5 -o spacy-21.r5m1v3 -rs choose_n -maxN 10000 -do 0.3 -lr 0.0005 -rr 4 -tr
+#
+
+# python spacy_textcat.py holdout.pkl -m spacy-21.r5m1v1 -ev
+# python spacy_textcat.py holdout.pkl -m spacy-21.r5m1v2 -ev
+# python spacy_textcat.py holdout.pkl -m spacy-21.r5m1v3 -ev
+#
+# python spacy_textcat.py red_dominant.pkl -m spacy-21.r5m1v1 -o spacy-21.r5m2v1 -rs choose_n -maxN 10000 -do 0.3 -lr 0.0005 -rr 8 -tr
+# python spacy_textcat.py red_dominant.pkl -m spacy-21.r5m1v2 -o spacy-21.r5m2v2 -rs choose_n -maxN 10000 -do 0.3 -lr 0.0005 -rr 8 -tr -fb
+# python spacy_textcat.py red_dominant.pkl -m spacy-21.r5m1v3 -o spacy-21.r5m2v3 -rs choose_n -maxN 10000 -do 0.3 -lr 0.0005 -rr 4 -tr
+#
+#
+# python spacy_textcat.py holdout.pkl -m spacy-21.r5m2v1 -ev
+# python spacy_textcat.py holdout.pkl -m spacy-21.r5m2v2 -ev
+# python spacy_textcat.py holdout.pkl -m spacy-21.r5m2v3 -ev
+
+# python spacy_textcat.py red_dominant.pkl -m spacy-21.r5 -o spacy-21.r5m1v4 -rs choose_n -maxN 10000 -do 0.3 -lr 0.0005 -rr 4 -tr -fb
+# python spacy_textcat.py red_dominant.pkl -m spacy-21.r5m1v4 -o spacy-21.r5m2v4 -rs choose_n -maxN 10000 -do 0.3 -lr 0.0005 -rr 4 -tr -fb
+# python spacy_textcat.py holdout.pkl -m spacy-21.r5m1v4 -ev
+# python spacy_textcat.py holdout.pkl -m spacy-21.r5m2v4 -ev
+
+# python spacy_textcat.py red_dominant.pkl -m spacy-21.r5m2v3 -o spacy-21.r5m3v3 -rs choose_n -maxN 10000 -do 0.3 -lr 0.0005 -rr 4 -tr
+# python spacy_textcat.py red_dominant.pkl -m spacy-21.r5m3v3 -o spacy-21.r5m4v3 -rs choose_n -maxN 10000 -do 0.3 -lr 0.0005 -rr 4 -tr
+# python spacy_textcat.py red_dominant.pkl -m spacy-21.r5m2v4 -o spacy-21.r5m3v4 -rs choose_n -maxN 10000 -do 0.3 -lr 0.0005 -rr 4 -tr -fb
+# python spacy_textcat.py red_dominant.pkl -m spacy-21.r5m3v4 -o spacy-21.r5m4v4 -rs choose_n -maxN 10000 -do 0.3 -lr 0.0005 -rr 4 -tr -fb
+
 
 
 

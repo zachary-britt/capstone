@@ -480,6 +480,46 @@ def _load_and_configure_test_data(data_name, **cfg):
     return {'test':return_vals}
 
 
+def red_dominant(**cfg):
+    art_df = pd.read_pickle(DATA_PATH + 'articles.pkl')
+    reddit_df = pd.read_pickle(DATA_PATH + 'reddit.pkl')
+    reddit_ratio = cfg.get('reddit_ratio', 9)
+
+    art_left = art_df[art_df['orient']=='left']
+    art_right = art_df[art_df['orient']=='right']
+    art_cent = art_df[art_df['orient']=='center']
+
+    red_left = reddit_df[reddit_df['orient']=='left']
+    red_right = reddit_df[reddit_df['orient']=='right']
+    red_cent = reddit_df[reddit_df['orient']=='center']
+
+    red_N = min(red_left.shape[0], red_right.shape[0])
+    art_N = int(red_N / reddit_ratio)
+
+
+    art_left = art_left.loc[np.random.choice(art_left.index.values, art_N)]
+    red_left = red_left.loc[np.random.choice(red_left.index.values, red_N)]
+
+    art_right = art_right.loc[np.random.choice(art_right.index.values, art_N)]
+    red_right = red_right.loc[np.random.choice(red_right.index.values, red_N)]
+
+    art_cent = art_cent.loc[np.random.choice(art_cent.index.values, art_N)]
+    red_cent = red_cent.loc[np.random.choice(red_cent.index.values, red_N)]
+
+    df_train = pd.concat([art_left, red_left, art_right, red_right, art_cent, red_cent],
+            ignore_index=True)
+
+    inds = df_train.index.values
+    np.random.shuffle(inds)
+
+    df_train = df_train.iloc[inds]
+
+
+    ''' save to pickle'''
+    out_loc = DATA_PATH + 'red_dominant.pkl'
+    df_train.to_pickle(out_loc)
+
+
 def make_ultra_cross_val(**cfg):
 
     sources = ['hp','mj','od','ai','reu','nyt','fox','bb','gp','cnn']
@@ -491,7 +531,7 @@ def make_ultra_cross_val(**cfg):
 
     for test_source in sources:
         df_test = all_arts_df[all_arts_df.source == test_source]
-        df_test.reset_index(inplace=True)
+        df_test.reset_index(inplace=True, drop=True)
         art_df = all_arts_df[all_arts_df.source != test_source]
 
         '''Set up reddit/ remaining articles mix'''
