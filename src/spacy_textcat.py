@@ -10,7 +10,7 @@ import ipdb
 from collections import Counter
 from multiprocessing import Pool
 import pickle
-
+import sys
 import os
 DATA_PATH = os.environ['DATA_PATH']
 
@@ -19,10 +19,13 @@ import eval_utils
 
 class Model:
 
-    def __init__(self, model_name, **kwargs):
+    def __init__(self, **kwargs):
+        if not kwargs.get('model_name'):
+            print('Must provide a model name')
+            sys.exit()
         self.cfg = kwargs
         self.cfg['catnest']=True
-        model_dir = DATA_PATH + 'model_cache/' + model_name
+        model_dir = DATA_PATH + 'model_cache/' + self.cfg.get('model_name')
         self.model_dir = Path(model_dir)
         self.labels = kwargs.get('labels',['left', 'right'])
         self.open_nlp_with_text_cat_()
@@ -69,7 +72,7 @@ class Model:
         if rr:
             zutils.red_dominant(**self.cfg)
 
-        data = zutils.load_and_configure_data(data_name, **self.cfg)
+        data = zutils.load_and_configure_data(**self.cfg)
         return data
 
     def _make_optimizer(self):
@@ -78,7 +81,7 @@ class Model:
         '''
         # cannibalized from spacy/spacy/_ml/create_default_optimizer
 
-        optimizer = self.nlp.begin_training(n_workers = 8)
+        optimizer = self.nlp.begin_training(n_workers = -1)
         optimizer.learn_rate = self.cfg.get('learn_rate', 0.001)
         optimizer.beta1 = self.cfg.get('optimizer_B1', 0.9)
         optimizer.beta2 = self.cfg.get('optimizer_B2', 0.999)
@@ -87,11 +90,13 @@ class Model:
         optimizer.max_grad_norm = self.cfg.get('grad_norm_clip', 1.)
         return optimizer
 
-    def fit(self, data_name, **kwargs):
+    def fit(self, **kwargs):
         '''
         fits the model
         '''
         self.cfg.update(kwargs)
+
+        data_name = self.cfg.get('data_name')
 
         data = self.load_and_configure_training_data(data_name)
         train_data = data.get('train')
@@ -191,38 +196,64 @@ class Model:
         a dataframe with text in df['content'] and labels in
         df['orient'] or df[['left','right']]
         '''
-        thresholds = {'left':0.5, 'right':0.5}
-
+        #ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         # tediously handle list or pandas DataFrame input
-        if type(test_data) == list:
-            texts, label_dicts = zip(*test_data)
-            cat_dicts = [label_dict['cats'] for label_dict in label_dicts]
-        elif type(test_data) == pd.DataFrame:
-            texts = test_data['content'].tolist()
-            if 'left' in test_data.columns:
-                is_lefts = test_data['left']
-                is_rights = test_data['right']
-            elif 'orient' in test_data.columns:
-                is_lefts = np.where(test_data['orient'].values == 'left',1,0)
-                is_rights = np.where(test_data['orient'].values == 'right',1,0)
-            else:
-                print('test data label column not found')
-                return
-            cat_dicts = [{'left':z[0],'right':z[1]} for z in zip(is_lefts, is_rights)]
-        else:
-            print('test_data is of type {}, must be list or dataframe')
-            return
+        # if type(test_data) == list:
+        texts, label_dicts = zip(*test_data)
+        cat_dicts = [label_dict['cats'] for label_dict in label_dicts]
+        # elif type(test_data) == pd.DataFrame:
+        #     texts = test_data['content'].tolist()
+        #     if 'left' in test_data.columns:
+        #         is_lefts = test_data['left']
+        #         is_rights = test_data['right']
+        #     elif 'orient' in test_data.columns:
+        #         is_lefts = np.where(test_data['orient'].values == 'left',1,0)
+        #         is_rights = np.where(test_data['orient'].values == 'right',1,0)
+        #     else:
+        #         print('test data label column not found')
+        #         return
+        #     cat_dicts = [{'left':z[0],'right':z[1]} for z in zip(is_lefts, is_rights)]
+        # else:
+        #     print('test_data is of type {}, must be list or dataframe')
+        #     return
 
         scores_df = self.score_texts(texts)
 
-        for label in thresholds:
-            label_scores = scores_df[label]
-            # label_scores = np.array([score[label] for score in scores])
-            real_labels = np.array([label_dict[label] for label_dict in cat_dicts])
-            thresh = thresholds[label]
+        if len(self.labels) == 2:
+            thresholds = {'left':0.5, 'right':0.5}
+            for label in thresholds:
 
-            M = eval_utils.build_confusion(real_labels, label_scores, thresh)
-            eval_utils.print_confusion_report(M, label)
+                label_scores = scores_df[label]
+                # label_scores = np.array([score[label] for score in scores])
+                real_labels = np.array([label_dict[label] for label_dict in cat_dicts])
+                thresh = thresholds[label]
+
+                M = eval_utils.build_confusion(real_labels, label_scores, thresh)
+                eval_utils.print_confusion_report(M, label)
+
+        else:
+            thresholds = {'left':0.1, 'right':0.1}
+            label_scores = scores_df['bias']
+            true_labels = np.array([label_dict['bias'] for label_dict in cat_dicts])
+
+            t = thresholds['right']
+            # r_preds = np.where(label_scores > t, 1, 0)
+            # r_trues = np.where(true_labels > t, 1, 0)
+
+            M = eval_utils.build_confusion(true_labels, label_scores, t)
+            eval_utils.print_confusion_report(M, 'right')
+
+            t = thresholds['left']
+            # l_preds = np.where(label_scores < t, 1, 0)
+            # l_trues = np.where(true_labels < t, 1, 0)
+
+            label_scores *= -1
+            true_labels *= -1
+
+            M = eval_utils.build_confusion(true_labels, label_scores, t)
+            eval_utils.print_confusion_report(M, 'left')
+
         return scores_df
 
     def predict_proba(self, df, verbose=True):
@@ -267,13 +298,15 @@ class Model:
     dropout=("Dropout rate to use", 'option', 'do', float),
     L2_penalty=("L2 regularization param", 'option', 'l2', float),
     learn_rate=('Learning rate used by optimizer','option','lr', float),
-    min_batch_size=("Minimum Batch size", 'option', "minb", float),
-    max_batch_size=("Maximum Batch size", 'option', "maxb", float),
+    minb=("Minimum Batch size", 'option', "minb", float),
+    maxb=("Maximum Batch size", 'option', "maxb", float),
     float_bias=('Use float proportional bias', 'flag', 'fb', bool),
     low_data=('simplified model','flag', 'low_d', bool),
     epochs=("Training epochs", 'option', 'ep', int),
     glove=("use gloVe vectors", 'flag','gl', bool),
     reddit_ratio=('ratio of reddit to arts', 'option', 'rr', float),
+    test_cap=('maximum test size', 'option', 'tc', int),
+    tanh_setup=('Single label tanh setup','flag','ts',bool),
     quiet=('Dont print all over everything','flag','q', bool)
 )
 def main(   data_name,
@@ -287,13 +320,15 @@ def main(   data_name,
             dropout=0.6,
             L2_penalty=1e-6,
             learn_rate=0.001,
-            min_batch_size=4.,
-            max_batch_size=16.,
+            minb=4.,
+            maxb=64.,
             float_bias=False,
             low_data=False,
             epochs=1,
             glove=False,
             reddit_ratio=0.0,
+            test_cap=0,
+            tanh_setup=False,
             quiet=False
             ):
     '''
@@ -307,17 +342,27 @@ def main(   data_name,
     else:
         label_type = 'cats'
 
-    kwargs = {  'out_name':out_name, 'reset':reset, 'test_all':test_all,
-                'train_all':train_all,'resampling':resampling,'dropout':dropout,
-                'minb':min_batch_size,'maxb':max_batch_size, 'label_type':label_type,
-                'epochs':epochs,'verbose': not quiet, 'glove':glove, 'low_data':low_data,
-                'L2_penalty':L2_penalty, 'learn_rate':learn_rate,"zipit":True,
-                'max_class_size': maxN, 'reddit_ratio':reddit_ratio}
+    zipit=True
+    verbose = not quiet
+    max_class_size = maxN
 
-    model = Model(model_name, **kwargs)
+    if tanh_setup:
+        labels = ['bias']
+        label_type = 'tbias'
+
+    kwargs = dict(locals())
+
+    # kwargs = {  'out_name':out_name, 'reset':reset, 'test_all':test_all,
+    #             'train_all':train_all,'resampling':resampling,'dropout':dropout,
+    #             'minb':minb,'maxb':maxb, 'label_type':label_type,
+    #             'epochs':epochs,'verbose': not quiet, 'glove':glove, 'low_data':low_data,
+    #             'L2_penalty':L2_penalty, 'learn_rate':learn_rate,"zipit":True,
+    #             'max_class_size': maxN, 'reddit_ratio':reddit_ratio}
+
+    model = Model(**kwargs)
 
     if not kwargs.get('test_all'):
-        model.fit(data_name, **kwargs)
+        model.fit(**kwargs)
         model.save(out_name)
         return None, None
     else:

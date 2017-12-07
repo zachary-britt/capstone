@@ -67,6 +67,10 @@ def open_as_df(collection_name):
 
 '''DATA LOADING UTILS'''
 
+def _make_tanh_dict(df):
+    y = [{'bias':bias} for bias in df['bias']]
+    return y
+
 def _make_cat_dict(y, labels):
     y = [{label:value == label for label in labels} for value in y]
     return y
@@ -133,6 +137,9 @@ def _format_y(df, **cfg):
     elif label_type == 'catbias':
         y = _make_catbias_dict(df, labels)
 
+    elif label_type == 'tbias':
+        y = _make_tanh_dict(df)
+
     else: #label_type == 'string': # (or unrecognized)
         if label_type != 'string':
             print('''label_type unrecognized, formatting as string, options are:\n
@@ -142,19 +149,18 @@ def _format_y(df, **cfg):
     return y
 
 
-def _resampler(y, **cfg):
+def _resampler(o, **cfg):
     resampling_type=cfg.get('resampling')
 
-
     if resampling_type == 'none' or not resampling_type:
-        return y.index.values
+        return o.index.values
 
     valid_types = ['over','under','choose_n']
     if resampling_type not in valid_types:
         print('{} is not a recognized resampling_type')
-        return y.index.values
+        return o.index.values
 
-    raw_counts = y.value_counts()
+    raw_counts = o.value_counts()
     labels = raw_counts.index.values
     counts = Counter({label: raw_counts[label] for label in labels}).most_common()
 
@@ -165,7 +171,7 @@ def _resampler(y, **cfg):
     if resampling_type == 'over':
         N = label_counts[0] # size of largest class
         for label, count in zip(label_order, label_counts):
-            label_inds = y[y==label].index.values
+            label_inds = o[o==label].index.values
 
             # stuff in at least one of each
             new_inds.extend(label_inds)
@@ -177,16 +183,19 @@ def _resampler(y, **cfg):
     elif resampling_type == 'under':
         N = label_counts[-1]    #size of smallest class
         for label, count in zip(label_order, label_counts):
-            label_inds = y[y==label].index.values
+            label_inds = o[o==label].index.values
             under_inds = np.random.choice(label_inds, N, replace=False)
             new_inds.extend(under_inds)
 
     elif resampling_type == 'choose_n':
         N = cfg.get('max_class_size')
         if not N:
+            N = cfg.get('maxN')
+
+        if not N:
             print("MUST SPECIFY 'max_class_size' for 'choose_n' resampling")
         for label in label_order:
-            label_inds = y[y==label].index.values
+            label_inds = o[o==label].index.values
             choice_inds = np.random.choice(label_inds, N, replace=True)
             new_inds.extend(choice_inds)
 
@@ -197,7 +206,7 @@ def _resampler(y, **cfg):
 
 ''' MAIN DATA LOADER '''
 
-def load_and_configure_data(data_name, **cfg):
+def load_and_configure_data(**cfg):
     '''
     Prep formatted dataframe for training or testing
 
@@ -248,9 +257,9 @@ def load_and_configure_data(data_name, **cfg):
     # redirect:
     # if only running evaluation, call test configurer
     if cfg.get('test_all') or cfg.get('peek'):
-        return _load_and_configure_test_data(data_name, **cfg)
+        return _load_and_configure_test_data(**cfg)
 
-
+    data_name = cfg.get('data_name')
     # optional argument unpacking
     label_type = cfg.get('label_type', 'cats')
     verbose = cfg.get('verbose',True)
@@ -267,6 +276,7 @@ def load_and_configure_data(data_name, **cfg):
     if train_all:
         test_size=0
 
+    test_cap = cfg.get('test_cap')
 
     # load dataframe
     data_loc = DATA_PATH + data_name
@@ -301,22 +311,29 @@ def load_and_configure_data(data_name, **cfg):
 
 
     '''SETUP RESAMPLING/CLASS BALANCING'''
-    y_t = df.iloc[t_inds].orient
-    y_e = df.iloc[e_inds].orient
+    o_t = df.iloc[t_inds].orient
+    o_e = df.iloc[e_inds].orient
 
-    if verbose:
-        print('\ntrain class support:')
-        pprint(y_t.value_counts())
-
-        print('\ntest class support:')
-        pprint(y_e.value_counts())
-        print()
 
     if resampling and resampling != 'none':
-        if verbose: print('rebalancing classes via {}sampling'.format(resampling))
-        t_inds = _resampler(y_t, **cfg)
-        y_t = y_t[t_inds]
+        if verbose: print('rebalancing training classes via {}sampling'.format(resampling))
+        t_inds = _resampler(o_t, **cfg)
 
+    if test_cap:
+        if verbose: print('rebalancing test classes via choose n resampling')
+        test_cap = min(e_inds.shape[0], test_cap)
+        e_inds = _resampler(o_e, resampling='choose_n', maxN=test_cap//3)
+
+    if verbose:
+        o_t = df.iloc[t_inds].orient
+        o_e = df.iloc[e_inds].orient
+
+        print('\ntrain class support:')
+        pprint(o_t.value_counts())
+
+        print('\ntest class support:')
+        pprint(o_e.value_counts())
+        print()
 
     X_t = df.iloc[t_inds].content.values
     X_e = df.iloc[e_inds].content.values
