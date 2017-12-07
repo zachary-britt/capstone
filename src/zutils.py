@@ -262,7 +262,7 @@ def load_and_configure_data(**cfg):
     data_name = cfg.get('data_name')
     # optional argument unpacking
     label_type = cfg.get('label_type', 'cats')
-    verbose = cfg.get('verbose',True)
+    verbose = cfg.get('super_verbose',False)
     test_size = cfg.get('test_size',0.05)
     test_all = cfg.get('test_all')
     train_all= cfg.get('train_all')

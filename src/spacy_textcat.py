@@ -23,10 +23,16 @@ class Model:
         if not kwargs.get('model_name'):
             print('Must provide a model name')
             sys.exit()
+
         self.cfg = kwargs
+
+        self.verbose = self.cfg.get('verbose')
+        self.super_verbose = self.cfg.get('super_verbose')
         self.cfg['catnest']=True
+
         model_dir = DATA_PATH + 'model_cache/' + self.cfg.get('model_name')
         self.model_dir = Path(model_dir)
+
         self.labels = kwargs.get('labels',['left', 'right'])
         self.open_nlp_with_text_cat_()
 
@@ -95,9 +101,10 @@ class Model:
         fits the model
         '''
         self.cfg.update(kwargs)
+        check_in_interval = self.cfg.get('check_in_interval', 10000)
+
 
         data_name = self.cfg.get('data_name')
-
         data = self.load_and_configure_training_data(data_name)
         train_data = data.get('train')
         val_data = data.get('test')
@@ -133,13 +140,14 @@ class Model:
 
                 ''' run test on subset of validation set so you don't get bored '''
                 n += bs
-                if n >= 10000:
+                if n >= 50000:
                     n=0
                     if len(val_data) and self.cfg.get('verbose'): #check val data not empty
 
                         t = bar.kill(loss_str)
+                        print(self.cfg.get('model_name'))
                         with self.textcat.model.use_params(optimizer.averages):
-                            self.in_progress_val(val_data)
+                            self.in_progress_val(val_data, N=total_seen)
 
                         bar = zutils.ProgressBar('Epoch: {}'.format(i+1), len(train_data))
                         bar.start_time -= t
@@ -153,7 +161,7 @@ class Model:
                 with self.textcat.model.use_params(optimizer.averages):
                     self.evaluate_confusion(val_data)
 
-    def in_progress_val(self, val_data):
+    def in_progress_val(self, val_data, N=None):
         '''
         subsets val_data to create a quick (in progress) evauation metric
         '''
@@ -162,7 +170,7 @@ class Model:
         inds = np.arange(val_arr.shape[0])
         mini_val_inds = np.random.choice(inds, 1000, replace=False)
         mini_val = val_arr[mini_val_inds].tolist()
-        self.evaluate_confusion(mini_val)
+        self.evaluate_confusion(mini_val, N=N, mini_val=True)
 
 
     def score_texts(self, texts, verbose=True):
@@ -188,7 +196,7 @@ class Model:
 
         return scores_df
 
-    def evaluate_confusion(self, test_data):
+    def evaluate_confusion(self, test_data, N=None, mini_val=False):
         '''
         Creates evauation metrics for test_data.
 
@@ -233,23 +241,31 @@ class Model:
                 eval_utils.print_confusion_report(M, label)
 
         else:
-            thresholds = {'left':0.1, 'right':0.1}
+            thresholds = {'left':0.05, 'right':0.05}
             label_scores = scores_df['bias']
             true_labels = np.array([label_dict['bias'] for label_dict in cat_dicts])
 
             t = thresholds['right']
-            # r_preds = np.where(label_scores > t, 1, 0)
-            # r_trues = np.where(true_labels > t, 1, 0)
+
+            if mini_val:
+                title = "Minival ROC for: {} after {} samples".format(self.cfg.get('out_name'), N)
+            else:
+                title = "Eval ROC for: {}".format(self.cfg.get('out_name'))
+
+            eval_utils.make_roc(true_labels, label_scores, 'right', title=title)
 
             M = eval_utils.build_confusion(true_labels, label_scores, t)
             eval_utils.print_confusion_report(M, 'right')
 
             t = thresholds['left']
-            # l_preds = np.where(label_scores < t, 1, 0)
-            # l_trues = np.where(true_labels < t, 1, 0)
 
             label_scores *= -1
             true_labels *= -1
+
+            # out_dir = '../figures/eval_rocs/'
+            # out = out_dir + title.replace(' ','-')
+            # eval_utils.make_roc(true_labels, label_scores, 'left', title=title, file_path = out)
+            eval_utils.make_roc(true_labels, label_scores, 'left', title=title, action='show')
 
             M = eval_utils.build_confusion(true_labels, label_scores, t)
             eval_utils.print_confusion_report(M, 'left')
@@ -306,8 +322,10 @@ class Model:
     glove=("use gloVe vectors", 'flag','gl', bool),
     reddit_ratio=('ratio of reddit to arts', 'option', 'rr', float),
     test_cap=('maximum test size', 'option', 'tc', int),
-    tanh_setup=('Single label tanh setup','flag','ts',bool),
-    quiet=('Dont print all over everything','flag','q', bool)
+    tanh_setup=('Single label tanh config','flag','ts',bool),
+    quiet=('Dont print all over everything','flag','q', bool),
+    super_verbose=('Print all of everything', 'flag', 'sv', bool),
+    check_in_interval=('Interval at which to do mini-val', 'option', 'cii', int)
 )
 def main(   data_name,
             model_name='spacy_clf',
@@ -321,7 +339,7 @@ def main(   data_name,
             L2_penalty=1e-6,
             learn_rate=0.001,
             minb=4.,
-            maxb=64.,
+            maxb=32.,
             float_bias=False,
             low_data=False,
             epochs=1,
@@ -329,7 +347,9 @@ def main(   data_name,
             reddit_ratio=0.0,
             test_cap=0,
             tanh_setup=False,
-            quiet=False
+            quiet=False,
+            super_verbose=False,
+            check_in_interval=50000
             ):
     '''
     Builds text categorization model with spacy
@@ -351,13 +371,6 @@ def main(   data_name,
         label_type = 'tbias'
 
     kwargs = dict(locals())
-
-    # kwargs = {  'out_name':out_name, 'reset':reset, 'test_all':test_all,
-    #             'train_all':train_all,'resampling':resampling,'dropout':dropout,
-    #             'minb':minb,'maxb':maxb, 'label_type':label_type,
-    #             'epochs':epochs,'verbose': not quiet, 'glove':glove, 'low_data':low_data,
-    #             'L2_penalty':L2_penalty, 'learn_rate':learn_rate,"zipit":True,
-    #             'max_class_size': maxN, 'reddit_ratio':reddit_ratio}
 
     model = Model(**kwargs)
 

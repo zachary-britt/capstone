@@ -198,36 +198,36 @@ $launch_spacy
 # python spacy_textcat.py reddit.pkl -m spacy-22.Tr1 -o spacy-22.Tr2 -rs under -tc 5000 -ts
 # python spacy_textcat.py reddit.pkl -m spacy-22.Tr2 -o spacy-22.Tr3 -rs under -tc 5000 -ts
 
-python spacy_textcat.py reddit.pkl -m spacy-22.Tr3 -o spacy-22.Tr4 -rs under -tc 5000 -ts -do 0.4
-python spacy_textcat.py reddit.pkl -m spacy-22.Tr4 -o spacy-22.Tr5 -rs under -tc 5000 -ts -do 0.3
-python spacy_textcat.py reddit.pkl -m spacy-22.Tr5 -o spacy-22.Tr6 -rs under -tc 5000 -ts -do 0.2
-python spacy_textcat.py reddit.pkl -m spacy-22.Tr6 -o spacy-22.Tr7 -rs under -tc 5000 -ts -do 0.1
-
-
-python spacy_textcat.py reddit.pkl -m spacy-23.Tr1 -o spacy-23.Tr1 -rs under -tc 5000 -ts -gl
-python spacy_textcat.py reddit.pkl -m spacy-23.Tr1 -o spacy-23.Tr2 -rs under -tc 5000 -ts
-python spacy_textcat.py reddit.pkl -m spacy-23.Tr2 -o spacy-23.Tr3 -rs under -tc 5000 -ts
-python spacy_textcat.py reddit.pkl -m spacy-23.Tr3 -o spacy-23.Tr4 -rs under -tc 5000 -ts -do 0.4
-python spacy_textcat.py reddit.pkl -m spacy-23.Tr4 -o spacy-23.Tr5 -rs under -tc 5000 -ts -do 0.3
-python spacy_textcat.py reddit.pkl -m spacy-23.Tr5 -o spacy-23.Tr6 -rs under -tc 5000 -ts -do 0.2
-python spacy_textcat.py reddit.pkl -m spacy-23.Tr6 -o spacy-23.Tr7 -rs under -tc 5000 -ts -do 0.1
-
-
-python spacy_textcat.py reddit.pkl -m spacy-24.Tr1 -o spacy-24.Tr1 -rs under -tc 5000 -ts -low_d
-python spacy_textcat.py reddit.pkl -m spacy-24.Tr1 -o spacy-24.Tr2 -rs under -tc 5000 -ts
-python spacy_textcat.py reddit.pkl -m spacy-24.Tr2 -o spacy-24.Tr3 -rs under -tc 5000 -ts
-python spacy_textcat.py reddit.pkl -m spacy-24.Tr3 -o spacy-24.Tr4 -rs under -tc 5000 -ts -do 0.4
-python spacy_textcat.py reddit.pkl -m spacy-24.Tr4 -o spacy-24.Tr5 -rs under -tc 5000 -ts -do 0.3
-python spacy_textcat.py reddit.pkl -m spacy-24.Tr5 -o spacy-24.Tr6 -rs under -tc 5000 -ts -do 0.2
-python spacy_textcat.py reddit.pkl -m spacy-24.Tr6 -o spacy-24.Tr7 -rs under -tc 5000 -ts -do 0.1
-
-python spacy_textcat.py reddit.pkl -m spacy-25.Tr1 -o spacy-25.Tr1 -rs under -tc 5000 -ts -low_d -gl
-python spacy_textcat.py reddit.pkl -m spacy-25.Tr1 -o spacy-25.Tr2 -rs under -tc 5000 -ts
-python spacy_textcat.py reddit.pkl -m spacy-25.Tr2 -o spacy-25.Tr3 -rs under -tc 5000 -ts
-python spacy_textcat.py reddit.pkl -m spacy-25.Tr3 -o spacy-25.Tr4 -rs under -tc 5000 -ts -do 0.4
-python spacy_textcat.py reddit.pkl -m spacy-25.Tr4 -o spacy-25.Tr5 -rs under -tc 5000 -ts -do 0.3
-python spacy_textcat.py reddit.pkl -m spacy-25.Tr5 -o spacy-25.Tr6 -rs under -tc 5000 -ts -do 0.2
-python spacy_textcat.py reddit.pkl -m spacy-25.Tr6 -o spacy-25.Tr7 -rs under -tc 5000 -ts -do 0.1
+# python spacy_textcat.py reddit.pkl -m spacy-22.Tr3 -o spacy-22.Tr4 -rs under -tc 5000 -ts -do 0.4
+# python spacy_textcat.py reddit.pkl -m spacy-22.Tr4 -o spacy-22.Tr5 -rs under -tc 5000 -ts -do 0.3
+# python spacy_textcat.py reddit.pkl -m spacy-22.Tr5 -o spacy-22.Tr6 -rs under -tc 5000 -ts -do 0.2
+# python spacy_textcat.py reddit.pkl -m spacy-22.Tr6 -o spacy-22.Tr7 -rs under -tc 5000 -ts -do 0.1
+#
+#
+# python spacy_textcat.py reddit.pkl -m spacy-23.Tr1 -o spacy-23.Tr1 -rs under -tc 5000 -ts -gl
+# python spacy_textcat.py reddit.pkl -m spacy-23.Tr1 -o spacy-23.Tr2 -rs under -tc 5000 -ts
+# python spacy_textcat.py reddit.pkl -m spacy-23.Tr2 -o spacy-23.Tr3 -rs under -tc 5000 -ts
+# python spacy_textcat.py reddit.pkl -m spacy-23.Tr3 -o spacy-23.Tr4 -rs under -tc 5000 -ts -do 0.4
+# python spacy_textcat.py reddit.pkl -m spacy-23.Tr4 -o spacy-23.Tr5 -rs under -tc 5000 -ts -do 0.3
+# python spacy_textcat.py reddit.pkl -m spacy-23.Tr5 -o spacy-23.Tr6 -rs under -tc 5000 -ts -do 0.2
+# python spacy_textcat.py reddit.pkl -m spacy-23.Tr6 -o spacy-23.Tr7 -rs under -tc 5000 -ts -do 0.1
+#
+#
+# python spacy_textcat.py reddit.pkl -m spacy-24.Tr1 -o spacy-24.Tr1 -rs under -tc 5000 -ts -low_d
+# python spacy_textcat.py reddit.pkl -m spacy-24.Tr1 -o spacy-24.Tr2 -rs under -tc 5000 -ts
+# python spacy_textcat.py reddit.pkl -m spacy-24.Tr2 -o spacy-24.Tr3 -rs under -tc 5000 -ts
+# python spacy_textcat.py reddit.pkl -m spacy-24.Tr3 -o spacy-24.Tr4 -rs under -tc 5000 -ts -do 0.4
+# python spacy_textcat.py reddit.pkl -m spacy-24.Tr4 -o spacy-24.Tr5 -rs under -tc 5000 -ts -do 0.3
+# python spacy_textcat.py reddit.pkl -m spacy-24.Tr5 -o spacy-24.Tr6 -rs under -tc 5000 -ts -do 0.2
+# python spacy_textcat.py reddit.pkl -m spacy-24.Tr6 -o spacy-24.Tr7 -rs under -tc 5000 -ts -do 0.1
+#
+# python spacy_textcat.py reddit.pkl -m spacy-25.Tr1 -o spacy-25.Tr1 -rs under -tc 5000 -ts -low_d -gl
+# python spacy_textcat.py reddit.pkl -m spacy-25.Tr1 -o spacy-25.Tr2 -rs under -tc 5000 -ts
+# python spacy_textcat.py reddit.pkl -m spacy-25.Tr2 -o spacy-25.Tr3 -rs under -tc 5000 -ts
+# python spacy_textcat.py reddit.pkl -m spacy-25.Tr3 -o spacy-25.Tr4 -rs under -tc 5000 -ts -do 0.4
+# python spacy_textcat.py reddit.pkl -m spacy-25.Tr4 -o spacy-25.Tr5 -rs under -tc 5000 -ts -do 0.3
+# python spacy_textcat.py reddit.pkl -m spacy-25.Tr5 -o spacy-25.Tr6 -rs under -tc 5000 -ts -do 0.2
+# python spacy_textcat.py reddit.pkl -m spacy-25.Tr6 -o spacy-25.Tr7 -rs under -tc 5000 -ts -do 0.1
 
 
 #

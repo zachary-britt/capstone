@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import pickle
 import ipdb
+from pathlib import Path
 
-
-def make_roc(y_true, y_pred, label, N=None):
+def make_roc(y_true, y_pred, label, N=None, title=None, action=None, file_path=None):
     '''
     Produces ROC curve. Call multiple times if needed. Requires user to plt.show()
 
@@ -43,13 +43,25 @@ def make_roc(y_true, y_pred, label, N=None):
     plt.plot(threshes, threshes, '--', c='g' )
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    if N:
+
+    if title:
+        plt.suptitle(title)
+    elif N:
         plt.suptitle('ROC Curve after {} samples trained on'.format(N))
     else:
         plt.suptitle('ROC Curve')
     plt.legend()
-    #plt.show()
 
+    if action=='show':
+        plt.show()
+    elif file_path:
+        index = 0
+        path = Path("{}_{}.png".format(file_path, index))
+        while path.exists():
+            index += 1
+            path = Path("{}_{}.png".format(file_path, index))
+
+        plt.savefig(path, bbox_inches='tight')
 
 
 
@@ -59,6 +71,9 @@ def build_confusion(y_true, y_pred, thresh):
     '''
     y_true = np.array(y_true)
     y_pred = np.array(y_pred)
+
+    if y_true.min() < 0
+        y_true = np.where(y_true > 0, 1, 0)
 
     tpi = np.where( y_true & (y_pred >= thresh), 1, 0)
     fpi = np.where( ~y_true & (y_pred >= thresh), 1, 0)
