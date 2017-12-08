@@ -458,18 +458,18 @@ def load_and_configure_data(**cfg):
 #     return {'test':test_data}
 
 
-def _load_and_configure_test_data(data_name, **cfg):
+def _load_and_configure_test_data(**cfg):
     #redirect
     # if cfg.get('peek'):
     #     return _load_peek_set(data_name, **cfg)
 
-
+    data_name = cfg.get('data_name')
     data_loc = DATA_PATH + data_name
     df = pd.read_pickle(data_loc)
 
     # optional argument unpacking
     label_type = cfg.get('label_type', 'cats')
-    verbose = cfg.get('verbose',True)
+    verbose = cfg.get('super_verbose', False)
     # peek = cfg.get('peek')
     labels = cfg.get('labels',['left','right'])
     get_dates=cfg.get('dates')

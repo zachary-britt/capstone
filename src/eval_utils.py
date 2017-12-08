@@ -11,18 +11,21 @@ def make_roc(y_true, y_pred, label, N=None, title=None, action=None, file_path=N
     Produces ROC curve. Call multiple times if needed. Requires user to plt.show()
 
     '''
+
     inds = np.argsort(y_pred)
     y_pred = y_pred[inds]
     y_true = y_true[inds]
 
-    threshes = np.hstack([0, *y_pred, 1 ])[::-1]
+    threshes = np.hstack([y_pred.min()-1e-6, *y_pred, 1 ])[::-1]
     Ms = [build_confusion(y_true, y_pred,t) for t in threshes]
     Ms = pd.DataFrame(Ms)
     n = y_true.shape[0]
-    t = max(y_true.sum(),1e-8)
-    f = max(n-t,1e-8)
-    tprs = Ms.tp.values/t
-    fprs = Ms.fp.values/f
+    t = Ms.tp[0] + Ms.fn[0]
+    f = Ms.fp[0] + Ms.tn[0]
+    t = max(t,1e-8)
+    f = max(f,1e-8)
+    tprs = Ms.tp.values / t
+    fprs = Ms.fp.values / f
 
     #calc roc area (fun tiny integral calc)
     dx= fprs[1:] - fprs[:-1]
@@ -40,7 +43,7 @@ def make_roc(y_true, y_pred, label, N=None, title=None, action=None, file_path=N
         c = 'p'
 
     plt.plot(fprs, tprs, label=area_str, c=c )
-    plt.plot(threshes, threshes, '--', c='g' )
+    plt.plot([0,1], [0,1], '--', c='g' )
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
 
@@ -55,13 +58,18 @@ def make_roc(y_true, y_pred, label, N=None, title=None, action=None, file_path=N
     if action=='show':
         plt.show()
     elif file_path:
+        dir_ = Path(file_path)
+        if not dir_.exists():
+            dir_.mkdir()
+
         index = 0
-        path = Path("{}_{}.png".format(file_path, index))
+        path = Path("{}/{}.png".format(file_path, index))
         while path.exists():
             index += 1
-            path = Path("{}_{}.png".format(file_path, index))
+            path = Path("{}/{}.png".format(file_path, index))
 
-        plt.savefig(path, bbox_inches='tight')
+        plt.savefig(str(path), bbox_inches='tight')
+        plt.clf()
 
 
 
@@ -72,7 +80,7 @@ def build_confusion(y_true, y_pred, thresh):
     y_true = np.array(y_true)
     y_pred = np.array(y_pred)
 
-    if y_true.min() < 0
+    if y_true.min() < 0:
         y_true = np.where(y_true > 0, 1, 0)
 
     tpi = np.where( y_true & (y_pred >= thresh), 1, 0)

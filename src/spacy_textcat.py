@@ -36,6 +36,9 @@ class Model:
         self.labels = kwargs.get('labels',['left', 'right'])
         self.open_nlp_with_text_cat_()
 
+        if not self.cfg.get('out_name'):
+            self.cfg['out_name'] = self.cfg['model_name']
+
 
     def open_nlp_with_text_cat_(self):
         '''
@@ -140,7 +143,7 @@ class Model:
 
                 ''' run test on subset of validation set so you don't get bored '''
                 n += bs
-                if n >= 50000:
+                if n >= check_in_interval:
                     n=0
                     if len(val_data) and self.cfg.get('verbose'): #check val data not empty
 
@@ -262,10 +265,10 @@ class Model:
             label_scores *= -1
             true_labels *= -1
 
-            # out_dir = '../figures/eval_rocs/'
-            # out = out_dir + title.replace(' ','-')
-            # eval_utils.make_roc(true_labels, label_scores, 'left', title=title, file_path = out)
-            eval_utils.make_roc(true_labels, label_scores, 'left', title=title, action='show')
+            out_dir = '../figures/eval_rocs/'
+            out = out_dir + self.cfg.get('out_name')
+            eval_utils.make_roc(true_labels, label_scores, 'left', title=title, file_path = out)
+            # eval_utils.make_roc(true_labels, label_scores, 'left', title=title, action='show')
 
             M = eval_utils.build_confusion(true_labels, label_scores, t)
             eval_utils.print_confusion_report(M, 'left')
@@ -377,34 +380,10 @@ def main(   data_name,
     if not kwargs.get('test_all'):
         model.fit(**kwargs)
         model.save(out_name)
-        return None, None
     else:
-        data = zutils.load_and_configure_data(data_name, **model.cfg)['test']
-        scores = model.evaluate_confusion(data)
-        #y_pred = model.predict_proba(zip(*data)[0])
-        return scores, data
+        data = zutils.load_and_configure_data(**model.cfg)['test']
+        model.evaluate_confusion(data)
 
 
 if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-    scores, data = plac.call(main)
-    if scores is not None:
-
-        text, y_true = zip(*data)
-        y_true = [y['cats'] for y in y_true]
-        r_true = np.array([y['right'] for y in y_true])
-        l_true = np.array([y['left'] for y in y_true])
-
-        r_pred = scores['right'].values
-        l_pred = scores['left'].values
-
-        # with open('my_thing.pkl','wb') as f:
-        #     pickle.dump([r_true, l_true, r_pred, l_pred], f)
-
-        eval_utils.make_roc(r_true, r_pred, 'right')
-        eval_utils.make_roc(l_true, l_pred, 'left')
-
-        plt.show()
-
-
-        #
+    plac.call(main)

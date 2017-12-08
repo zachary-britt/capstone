@@ -229,5 +229,97 @@ $launch_spacy
 # python spacy_textcat.py reddit.pkl -m spacy-25.Tr5 -o spacy-25.Tr6 -rs under -tc 5000 -ts -do 0.2
 # python spacy_textcat.py reddit.pkl -m spacy-25.Tr6 -o spacy-25.Tr7 -rs under -tc 5000 -ts -do 0.1
 
+# python spacy_textcat.py red_dominant.pkl -m spacy-22.Tr7 -o spacy-22.Tr7m1 -rs choose_n -maxN 10000 -tc 5000 -ts -do 0.5 -cii 1000 -rr 5
+# python spacy_textcat.py red_dominant.pkl -m spacy-23.Tr7 -o spacy-23.Tr7m1 -rs choose_n -maxN 10000 -tc 5000 -ts -do 0.5 -cii 1000 -rr 5
+# python spacy_textcat.py red_dominant.pkl -m spacy-24.Tr7 -o spacy-24.Tr7m1 -rs choose_n -maxN 10000 -tc 5000 -ts -do 0.5 -cii 1000 -rr 5
+# python spacy_textcat.py red_dominant.pkl -m spacy-25.Tr7 -o spacy-25.Tr7m1 -rs choose_n -maxN 10000 -tc 5000 -ts -do 0.5 -cii 1000 -rr 5
+
+# python spacy_textcat.py red_dominant.pkl -m spacy-22.Tr7m1 -o spacy-22.Tr7m2 -rs choose_n -maxN 10000 -tc 5000 -ts -do 0.4 -cii 5001 -rr 5
+# python spacy_textcat.py red_dominant.pkl -m spacy-23.Tr7m1 -o spacy-23.Tr7m2 -rs choose_n -maxN 10000 -tc 5000 -ts -do 0.4 -cii 5001 -rr 5
+# python spacy_textcat.py red_dominant.pkl -m spacy-24.Tr7m1 -o spacy-24.Tr7m2 -rs choose_n -maxN 10000 -tc 5000 -ts -do 0.4 -cii 5001 -rr 5
+# python spacy_textcat.py red_dominant.pkl -m spacy-25.Tr7m1 -o spacy-25.Tr7m2 -rs choose_n -maxN 10000 -tc 5000 -ts -do 0.4 -cii 5001 -rr 5
+#
+# python spacy_textcat.py red_dominant.pkl -m spacy-22.Tr7m2 -o spacy-22.Tr7m3 -rs choose_n -maxN 10000 -tc 5000 -ts -do 0.3 -cii 5001 -rr 5
+# python spacy_textcat.py red_dominant.pkl -m spacy-23.Tr7m2 -o spacy-23.Tr7m3 -rs choose_n -maxN 10000 -tc 5000 -ts -do 0.3 -cii 5001 -rr 5
+# python spacy_textcat.py red_dominant.pkl -m spacy-24.Tr7m2 -o spacy-24.Tr7m3 -rs choose_n -maxN 10000 -tc 5000 -ts -do 0.3 -cii 5001 -rr 5
+# python spacy_textcat.py red_dominant.pkl -m spacy-25.Tr7m2 -o spacy-25.Tr7m3 -rs choose_n -maxN 10000 -tc 5000 -ts -do 0.3 -cii 5001 -rr 5
+#
+# python spacy_textcat.py red_dominant.pkl -m spacy-22.Tr7m3 -o spacy-22.Tr7m4 -rs choose_n -maxN 10000 -tc 5000 -ts -do 0.2 -cii 5001 -rr 5
+# python spacy_textcat.py red_dominant.pkl -m spacy-23.Tr7m3 -o spacy-23.Tr7m4 -rs choose_n -maxN 10000 -tc 5000 -ts -do 0.2 -cii 5001 -rr 5
+# python spacy_textcat.py red_dominant.pkl -m spacy-24.Tr7m3 -o spacy-24.Tr7m4 -rs choose_n -maxN 10000 -tc 5000 -ts -do 0.2 -cii 5001 -rr 5
+# python spacy_textcat.py red_dominant.pkl -m spacy-25.Tr7m3 -o spacy-25.Tr7m4 -rs choose_n -maxN 10000 -tc 5000 -ts -do 0.2 -cii 5001 -rr 5
+#
+# python spacy_textcat.py red_dominant.pkl -m spacy-22.Tr7m4 -o spacy-22.Tr7m5 -rs choose_n -maxN 10000 -tc 5000 -ts -do 0.1 -cii 5001 -rr 5
+# python spacy_textcat.py red_dominant.pkl -m spacy-23.Tr7m4 -o spacy-23.Tr7m5 -rs choose_n -maxN 10000 -tc 5000 -ts -do 0.1 -cii 5001 -rr 5
+# python spacy_textcat.py red_dominant.pkl -m spacy-24.Tr7m4 -o spacy-24.Tr7m5 -rs choose_n -maxN 10000 -tc 5000 -ts -do 0.1 -cii 5001 -rr 5
+# python spacy_textcat.py red_dominant.pkl -m spacy-25.Tr7m4 -o spacy-25.Tr7m5 -rs choose_n -maxN 10000 -tc 5000 -ts -do 0.1 -cii 5001 -rr 5
+
+python spacy_textcat.py holdout.pkl -m spacy-22.Tr7m1 -ts -ev
+python spacy_textcat.py holdout.pkl -m spacy-23.Tr7m1 -ts -ev
+python spacy_textcat.py holdout.pkl -m spacy-24.Tr7m1 -ts -ev
+python spacy_textcat.py holdout.pkl -m spacy-25.Tr7m1 -ts -ev
+
+python spacy_textcat.py holdout.pkl -m spacy-22.Tr7m2 -ts -ev
+python spacy_textcat.py holdout.pkl -m spacy-23.Tr7m2 -ts -ev
+python spacy_textcat.py holdout.pkl -m spacy-24.Tr7m2 -ts -ev
+python spacy_textcat.py holdout.pkl -m spacy-25.Tr7m2 -ts -ev
+
+python spacy_textcat.py holdout.pkl -m spacy-22.Tr7m3 -ts -ev
+python spacy_textcat.py holdout.pkl -m spacy-23.Tr7m3 -ts -ev
+python spacy_textcat.py holdout.pkl -m spacy-24.Tr7m3 -ts -ev
+python spacy_textcat.py holdout.pkl -m spacy-25.Tr7m3 -ts -ev
+
+python spacy_textcat.py holdout.pkl -m spacy-22.Tr7m4 -ts -ev
+python spacy_textcat.py holdout.pkl -m spacy-23.Tr7m4 -ts -ev
+python spacy_textcat.py holdout.pkl -m spacy-24.Tr7m4 -ts -ev
+python spacy_textcat.py holdout.pkl -m spacy-25.Tr7m4 -ts -ev
+
+python spacy_textcat.py holdout.pkl -m spacy-22.Tr7m5 -ts -ev
+python spacy_textcat.py holdout.pkl -m spacy-23.Tr7m5 -ts -ev
+python spacy_textcat.py holdout.pkl -m spacy-24.Tr7m5 -ts -ev
+python spacy_textcat.py holdout.pkl -m spacy-25.Tr7m5 -ts -ev
+
+#
+# data_name=("Dataframe name"),
+# model_name=("Where to find the model", "option", 'm', str),
+# out_name=("where to save the model", 'option', 'o', str),
+# reset=("Reset model found in model_loc", "flag", "rt", bool),
+# test_all=('Dont train on data, just evaluate', 'flag','ev', bool),
+# train_all=('Dont split data, train on full set', 'flag', 'tr', bool),
+# resampling=('Type of resampling to use [over, under, choose_n, none]', 'option', 'rs', str),
+# maxN=('max class size for choose N resampling', 'option', 'maxN', int),
+# dropout=("Dropout rate to use", 'option', 'do', float),
+# L2_penalty=("L2 regularization param", 'option', 'l2', float),
+# learn_rate=('Learning rate used by optimizer','option','lr', float),
+# minb=("Minimum Batch size", 'option', "minb", float),
+# maxb=("Maximum Batch size", 'option', "maxb", float),
+# float_bias=('Use float proportional bias', 'flag', 'fb', bool),
+# low_data=('simplified model','flag', 'low_d', bool),
+# epochs=("Training epochs", 'option', 'ep', int),
+# glove=("use gloVe vectors", 'flag','gl', bool),
+# reddit_ratio=('ratio of reddit to arts', 'option', 'rr', float),
+# test_cap=('maximum test size', 'option', 'tc', int),
+# tanh_setup=('Single label tanh config','flag','ts',bool),
+# quiet=('Dont print all over everything','flag','q', bool),
+# super_verbose=('Print all of everything', 'flag', 'sv', bool),
+# check_in_interval=('Interval at which to do mini-val', 'option', 'cii', int)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #
