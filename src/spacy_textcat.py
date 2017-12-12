@@ -286,6 +286,11 @@ class Model:
         probs = {[ score[label] for score in scores ] for label in labels}
         return np.array(probs)
 
+    def single_query(self, text):
+        labels = self.labels
+        doc = self.nlp(text)
+        scores = doc.cats
+        return scores
 
     def save(self, out_name=None):
         'Save text categorization model to disk'
@@ -328,7 +333,8 @@ class Model:
     tanh_setup=('Single label tanh config','flag','ts',bool),
     quiet=('Dont print all over everything','flag','q', bool),
     super_verbose=('Print all of everything', 'flag', 'sv', bool),
-    check_in_interval=('Interval at which to do mini-val', 'option', 'cii', int)
+    check_in_interval=('Interval at which to do mini-val', 'option', 'cii', int),
+    model_getter=('Return model', 'flag', 'mg', bool)
 )
 def main(   data_name,
             model_name='spacy_clf',
@@ -352,7 +358,8 @@ def main(   data_name,
             tanh_setup=False,
             quiet=False,
             super_verbose=False,
-            check_in_interval=50000
+            check_in_interval=50000,
+            model_getter=False
             ):
     '''
     Builds text categorization model with spacy
@@ -376,6 +383,9 @@ def main(   data_name,
     kwargs = dict(locals())
 
     model = Model(**kwargs)
+
+    if model_getter:
+        return model
 
     if not kwargs.get('test_all'):
         model.fit(**kwargs)
