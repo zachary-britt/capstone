@@ -1,3 +1,6 @@
+''' Lifted straight from Galvanize DSI flask solutions '''
+
+
 from flask import Flask, render_template, request, jsonify
 import spacy
 import spacy_textcat
@@ -29,7 +32,7 @@ def predict():
     model to classify.
     """
     data = str(request.form['article_body'])
-    pred = str(model.single_query([data]))
+    pred = str(model.single_query(data))
     return render_template('form/predict.html', article=data, predicted=pred)
 
 
