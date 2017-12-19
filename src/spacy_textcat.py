@@ -17,8 +17,8 @@ DATA_PATH = os.environ['DATA_PATH']
 import zutils
 import eval_utils
 
-class Model:
 
+class Spacecat:
     def __init__(self, **kwargs):
         if not kwargs.get('model_name'):
             print('Must provide a model name')
@@ -76,7 +76,13 @@ class Model:
 
 
     def load_and_configure_training_data(self, data_name):
-
+        '''
+        INPUT:
+        - data_name: str of data location relative to DATA_PATH
+        OUTPUT:
+        - data:     dict    {'train': training_data, 'test': testing_data}
+                    *_data being a zip of (texts, annotations)
+        '''
         rr = self.cfg.get('reddit_ratio')
         if rr:
             zutils.red_dominant(**self.cfg)
@@ -86,6 +92,11 @@ class Model:
 
     def _make_optimizer(self):
         '''
+        INPUT:
+        - None
+        OUTPUT:
+        - optimizer: thinc.neural.optimizers.Optimizer
+
         Allows for custom tweaking of adam optimizer
         '''
         # cannibalized from spacy/spacy/_ml/create_default_optimizer
@@ -101,8 +112,11 @@ class Model:
 
     def fit(self, **kwargs):
         '''
-        fits the model
+        INPUT
+        - kwargs: updates to cfg dict.
+        trains the model.
         '''
+
         self.cfg.update(kwargs)
         check_in_interval = self.cfg.get('check_in_interval', 10000)
 
@@ -177,7 +191,8 @@ class Model:
 
 
     def score_texts(self, texts, verbose=True):
-        ''' Produces category probability scores for texts
+        '''
+        Produces category probability scores for texts
         '''
         scores = []
         docs = (self.nlp.tokenizer(text) for text in texts)
@@ -203,31 +218,11 @@ class Model:
         '''
         Creates evauation metrics for test_data.
 
-        test_data can either be in a (text, cats) zip, or
-        a dataframe with text in df['content'] and labels in
-        df['orient'] or df[['left','right']]
+        test_data in a (text, cats) zip
         '''
-        #ipdb.set_trace()
-        #import ipdb; ipdb.set_trace()
-        # tediously handle list or pandas DataFrame input
-        # if type(test_data) == list:
+
         texts, label_dicts = zip(*test_data)
         cat_dicts = [label_dict['cats'] for label_dict in label_dicts]
-        # elif type(test_data) == pd.DataFrame:
-        #     texts = test_data['content'].tolist()
-        #     if 'left' in test_data.columns:
-        #         is_lefts = test_data['left']
-        #         is_rights = test_data['right']
-        #     elif 'orient' in test_data.columns:
-        #         is_lefts = np.where(test_data['orient'].values == 'left',1,0)
-        #         is_rights = np.where(test_data['orient'].values == 'right',1,0)
-        #     else:
-        #         print('test data label column not found')
-        #         return
-        #     cat_dicts = [{'left':z[0],'right':z[1]} for z in zip(is_lefts, is_rights)]
-        # else:
-        #     print('test_data is of type {}, must be list or dataframe')
-        #     return
 
         scores_df = self.score_texts(texts)
 
@@ -286,14 +281,20 @@ class Model:
         probs = {[ score[label] for score in scores ] for label in labels}
         return np.array(probs)
 
+
     def single_query(self, text):
+        '''
+        Returns scores for a single model. More compartmentalized than externally
+        pulling up the nlp attribute
+        '''
         labels = self.labels
         doc = self.nlp(text)
         scores = doc.cats
         return scores
 
+
     def save(self, out_name=None):
-        'Save text categorization model to disk'
+        'Save model to disk'
         if out_name:
             output_dir = DATA_PATH + 'model_cache/' + out_name
             print('saving to:')
@@ -382,17 +383,17 @@ def main(   data_name,
 
     kwargs = dict(locals())
 
-    model = Model(**kwargs)
+    spacecat = Spacecat(**kwargs)
 
     if model_getter:
-        return model
+        return spacecat
 
     if not kwargs.get('test_all'):
-        model.fit(**kwargs)
-        model.save(out_name)
+        spacecat.fit(**kwargs)
+        spacecat.save(out_name)
     else:
-        data = zutils.load_and_configure_data(**model.cfg)['test']
-        model.evaluate_confusion(data)
+        data = zutils.load_and_configure_data(**spacecat.cfg)['test']
+        spacecat.evaluate_confusion(data)
 
 
 if __name__ == '__main__':

@@ -2,7 +2,7 @@ import baseline_model
 import pandas as pd
 import zutils
 import eval_utils
-from spacy_textcat import Model as Spacecat
+from spacy_textcat import Spacecat
 import plac
 import ipdb
 from pathlib import Path
